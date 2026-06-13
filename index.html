@@ -585,9 +585,6 @@
       return;
     }
 
-    // Abrimos la pestaña dentro del gesto del usuario (evita que el navegador bloquee el pop-up tras el await).
-    const waWin = window.open('about:blank','_blank');
-
     let codigo = null;
     if(tipo==='Domicilio'){
       // Guardar cliente + pedido en BD. NUNCA bloquea el WhatsApp (degradación elegante).
@@ -625,8 +622,8 @@
     if(celular) msg += '\n*Celular:* '+celular;
     if(dir && tipo!=='Recoger en el local') msg += (tipo==='Para la mesa'?'\n*Mesa:* ':'\n*Dirección:* ')+dir;
 
-    const url = 'https://wa.me/573222259538?text='+encodeURIComponent(msg);
-    if(waWin && !waWin.closed){ waWin.location.href = url; } else { window.location.href = url; }
+    // Navegación en la MISMA pestaña (después del insert): en iPhone abre la app de WhatsApp, no la web.
+    window.location.href = 'https://wa.me/573222259538?text='+encodeURIComponent(msg);
   }
 
   // ====== INTRO ======
