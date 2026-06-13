@@ -43,6 +43,7 @@
   .tk.new .tk-head{background:var(--amarillo-suave)}
   .tk.proc .tk-head{background:#dbeafe}
   .tk-cod{font-family:'Anton',sans-serif;font-size:1.2rem;color:var(--carbon)}
+  .tk-ronda{display:inline-block;margin-left:7px;font-family:'Oswald',sans-serif;font-weight:600;font-size:.58rem;text-transform:uppercase;letter-spacing:.04em;background:var(--rojo);color:#fff;padding:2px 7px;border-radius:30px;vertical-align:middle}
   .tk-tipo{font-family:'Oswald',sans-serif;font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--marron-osc);text-align:right}
   .tk-tipo b{display:block;font-family:'Anton',sans-serif;font-size:1.05rem;color:var(--rojo)}
   .tk-body{padding:12px 15px}
@@ -112,35 +113,39 @@
   function entrar(){ $('login').style.display='none'; $('app').style.display='block'; cargar(); suscribir(); }
 
   async function cargar(){
-    const { data, error }=await SB.from('pedidos')
-      .select('id,tipo,estado,mesa_numero,created_at, comandas(comanda_items(nombre_snap,qty))')
-      .in('estado',['confirmado','en_proceso']).order('created_at',{ascending:true});
+    const { data, error }=await SB.from('comandas')
+      .select('id,tanda,estado,created_at,pedido_id, pedidos(tipo,mesa_numero,estado), comanda_items(nombre_snap,qty)')
+      .in('estado',['pendiente','en_proceso']).order('created_at',{ascending:true});
     if(error){ $('view').innerHTML='<div class="empty">No se pudo cargar.</div>'; return; }
-    const peds=data||[];
-    const nuevos=peds.filter(p=>p.estado==='confirmado'), proc=peds.filter(p=>p.estado==='en_proceso');
-    if(peds.length===0){ $('view').innerHTML='<div class="empty">No hay comandas pendientes 🍲</div>'; return; }
+    const ts=(data||[]).filter(c=>c.pedidos && c.pedidos.estado!=='cancelado');
+    const nuevos=ts.filter(c=>c.estado==='pendiente'), proc=ts.filter(c=>c.estado==='en_proceso');
+    if(ts.length===0){ $('view').innerHTML='<div class="empty">No hay comandas pendientes 🍲</div>'; return; }
     let html='';
-    if(nuevos.length){ html+='<div class="sec-h">Por hacer ('+nuevos.length+')</div><div class="grid">'+nuevos.map(p=>tk(p,'new')).join('')+'</div>'; }
-    if(proc.length){ html+='<div class="sec-h">En proceso ('+proc.length+')</div><div class="grid">'+proc.map(p=>tk(p,'proc')).join('')+'</div>'; }
+    if(nuevos.length){ html+='<div class="sec-h">Por hacer ('+nuevos.length+')</div><div class="grid">'+nuevos.map(c=>tk(c,'new')).join('')+'</div>'; }
+    if(proc.length){ html+='<div class="sec-h">En proceso ('+proc.length+')</div><div class="grid">'+proc.map(c=>tk(c,'proc')).join('')+'</div>'; }
     $('view').innerHTML=html;
   }
-  function tk(p, cls){
-    const items=(p.comandas||[]).flatMap(c=>c.comanda_items||[]);
-    const its=items.map(x=>'<div class="tk-it"><span class="tk-q">'+x.qty+'×</span><span class="tk-n">'+esc(x.nombre_snap)+'</span></div>').join('');
+  function tk(c, cls){
+    const its=(c.comanda_items||[]).map(x=>'<div class="tk-it"><span class="tk-q">'+x.qty+'×</span><span class="tk-n">'+esc(x.nombre_snap)+'</span></div>').join('');
+    const p=c.pedidos||{};
     const tipo = p.tipo==='mesa' ? ('Mesa <b>'+esc(p.mesa_numero||'?')+'</b>') : 'Domicilio';
-    const act = p.estado==='confirmado'
-      ? '<button class="tk-act empezar" onclick="avanzar(\''+p.id+'\',\'en_proceso\')">Empezar</button>'
-      : '<button class="tk-act entregar" onclick="avanzar(\''+p.id+'\',\'listo\')">Entregado</button>';
-    return '<div class="tk '+cls+'"><div class="tk-head"><span class="tk-cod">'+codigo(p.id)+'</span><span class="tk-tipo">'+tipo+'</span></div>'+
-      '<div class="tk-body">'+its+'<div class="tk-time">Recibido '+hora(p.created_at)+'</div></div>'+act+'</div>';
+    const ronda = c.tanda>1 ? '<span class="tk-ronda">Ronda '+c.tanda+'</span>' : '';
+    const act = c.estado==='pendiente'
+      ? '<button class="tk-act empezar" onclick="avanzar(\''+c.id+'\',\'en_proceso\')">Empezar</button>'
+      : '<button class="tk-act entregar" onclick="avanzar(\''+c.id+'\',\'entregado\')">Entregado</button>';
+    return '<div class="tk '+cls+'"><div class="tk-head"><span class="tk-cod">'+codigo(c.pedido_id)+ronda+'</span><span class="tk-tipo">'+tipo+'</span></div>'+
+      '<div class="tk-body">'+its+'<div class="tk-time">Recibido '+hora(c.created_at)+'</div></div>'+act+'</div>';
   }
   async function avanzar(id, a){
-    try{ const { error }=await SB.rpc('cocina_avanzar',{ p_pedido_id:id, p_a:a }); if(error) throw error; cargar(); }
+    try{ const { error }=await SB.rpc('cocina_comanda',{ p_comanda_id:id, p_a:a }); if(error) throw error; cargar(); }
     catch(e){ alert('No se pudo: '+(e.message||e)); }
   }
   function suscribir(){
     if(canal) return;
-    canal=SB.channel('cocina').on('postgres_changes',{event:'*',schema:'public',table:'pedidos'},()=>{ clearTimeout(reloadT); reloadT=setTimeout(cargar,400); }).subscribe();
+    canal=SB.channel('cocina')
+      .on('postgres_changes',{event:'*',schema:'public',table:'comandas'},()=>{ clearTimeout(reloadT); reloadT=setTimeout(cargar,400); })
+      .on('postgres_changes',{event:'*',schema:'public',table:'pedidos'},()=>{ clearTimeout(reloadT); reloadT=setTimeout(cargar,400); })
+      .subscribe();
   }
   function desuscribir(){ if(canal){ SB.removeChannel(canal); canal=null; } }
 

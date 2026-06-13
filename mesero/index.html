@@ -64,6 +64,10 @@
   .mc-tot b{font-family:'Anton',sans-serif;font-size:1.2rem}
   .act{display:block;width:100%;border:none;font-family:'Oswald',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:.95rem;padding:13px;cursor:pointer;color:#fff;background:var(--verde);margin-top:10px;border-radius:11px}
   .act:active{filter:brightness(.95)}
+  .act.add{background:var(--amarillo);color:var(--carbon);border:2px solid var(--marron-osc);margin-top:10px}
+  .ag-banner{display:flex;align-items:center;gap:10px;background:var(--amarillo-suave);border:2px solid var(--marron-osc);border-radius:14px;padding:11px 14px;margin-bottom:12px;font-family:'Oswald',sans-serif;color:var(--carbon)}
+  .ag-banner b{font-family:'Anton',sans-serif;color:var(--rojo)}
+  .ag-cancel{margin-left:auto;background:none;border:none;color:var(--gris);font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:.74rem;cursor:pointer}
 
   nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--carbon);display:flex;padding-bottom:var(--safe-b)}
   nav.tabs button{flex:1 1 0;background:none;border:none;color:rgba(255,255,255,.6);font-family:'Oswald',sans-serif;font-weight:600;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;padding:13px 4px 14px;cursor:pointer}
@@ -109,8 +113,8 @@
     <button class="logout" type="button" onclick="salir()">Salir</button>
   </header>
   <main id="view"></main>
-  <div class="cartbar" id="cartbar"><div class="cb-i" id="cbInfo">0 ítems<b id="cbTot">$0</b></div><button class="cb-send" onclick="enviarMesa()">Enviar a cocina</button></div>
-  <nav class="tabs"><button data-tab="nueva" class="active" onclick="irA('nueva')">Nueva mesa</button><button data-tab="abiertas" onclick="irA('abiertas')">Mesas abiertas</button></nav>
+  <div class="cartbar" id="cartbar"><div class="cb-i" id="cbInfo">0 ítems<b id="cbTot">$0</b></div><button class="cb-send" id="cbSend" onclick="enviarMesa()">Enviar a cocina</button></div>
+  <nav class="tabs"><button data-tab="nueva" class="active" onclick="nuevaTab()">Nueva mesa</button><button data-tab="abiertas" onclick="irA('abiertas')">Mesas abiertas</button></nav>
 </div>
 
 <!-- cobrar -->
@@ -138,7 +142,7 @@
   function abrirSheet(p){ $(p+'-sheet').classList.add('show'); $(p+'-bd').classList.add('show'); }
   function cerrarSheet(p){ $(p+'-sheet').classList.remove('show'); $(p+'-bd').classList.remove('show'); }
   const ESTADOS={confirmado:{t:'En cocina',bg:'#dbeafe',fg:'#1e40af'},en_proceso:{t:'En proceso',bg:'#ffe4c4',fg:'#9a4a00'},listo:{t:'Servido',bg:'#e9e0ff',fg:'#5b21b6'}};
-  let SB=null, CATS=[], PRODS=[], CART=[], TAB='nueva', canal=null, reloadT=null, MESA='', MESAS_LISTA=[];
+  let SB=null, CATS=[], PRODS=[], CART=[], TAB='nueva', canal=null, reloadT=null, MESA='', MESAS_LISTA=[], AGREGAR_A=null;
 
   async function boot(){ SB=window.supabaseClient; $('lf').addEventListener('submit', onLogin);
     const { data:{session} }=await SB.auth.getSession();
@@ -158,20 +162,27 @@
     const [{data:c},{data:p},{data:ms}]=await Promise.all([ SB.from('categorias').select('id,nombre,sub,orden').eq('visible',true).order('orden'), SB.from('productos').select('id,categoria_id,nombre,precio,visible,orden').eq('visible',true), SB.from('mesas').select('id,nombre,orden').eq('activa',true).order('orden') ]);
     CATS=c||[]; PRODS=p||[]; MESAS_LISTA=ms||[]; irA('nueva');
   }
-  function irA(tab){ TAB=tab; document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  function irA(tab){ TAB=tab; if(tab==='abiertas') AGREGAR_A=null;
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
     if(tab==='nueva'){ desuscribir(); vistaNueva(); } else { vistaAbiertas(); suscribir(); }
     actualizarCart();
   }
+  function nuevaTab(){ AGREGAR_A=null; CART=[]; MESA=''; irA('nueva'); }
 
   // ----- NUEVA -----
   function vistaNueva(){
     const ord={}; CATS.forEach(c=>ord[c.id]=c.orden);
     const list=PRODS.slice().sort((a,b)=>(ord[a.categoria_id]||0)-(ord[b.categoria_id]||0)||(a.orden||0)-(b.orden||0));
-    const opts=MESAS_LISTA.map(m=>'<option value="'+esc(m.nombre)+'"'+(m.nombre===MESA?' selected':'')+'>'+esc(m.nombre)+'</option>').join('');
-    const campoMesa = MESAS_LISTA.length
-      ? '<select id="mesa"><option value="">Elige la mesa…</option>'+opts+'</select>'
-      : '<input id="mesa" type="text" placeholder="Mesa (pide a la dueña que las configure)" value="'+esc(MESA)+'">';
-    let html='<div class="mesa-field"><div class="f1"><label for="mesa">Mesa</label>'+campoMesa+'</div></div>';
+    let html;
+    if(AGREGAR_A){
+      html='<div class="ag-banner">Agregando a <b>'+esc(AGREGAR_A.mesa)+'</b><button class="ag-cancel" type="button" onclick="nuevaTab()">Cancelar</button></div>';
+    }else{
+      const opts=MESAS_LISTA.map(m=>'<option value="'+esc(m.nombre)+'"'+(m.nombre===MESA?' selected':'')+'>'+esc(m.nombre)+'</option>').join('');
+      const campoMesa = MESAS_LISTA.length
+        ? '<select id="mesa"><option value="">Elige la mesa…</option>'+opts+'</select>'
+        : '<input id="mesa" type="text" placeholder="Mesa (pide a la dueña que las configure)" value="'+esc(MESA)+'">';
+      html='<div class="mesa-field"><div class="f1"><label for="mesa">Mesa</label>'+campoMesa+'</div></div>';
+    }
     let lastCat=null;
     list.forEach(p=>{ const c=CATS.find(x=>x.id===p.categoria_id); const cl=catLabel(c);
       if(cl!==lastCat){ if(lastCat!==null) html+='</div>'; html+='<div class="cat-h">'+esc(cl)+'</div><div class="card">'; lastCat=cl; }
@@ -180,19 +191,27 @@
     });
     if(lastCat!==null) html+='</div>';
     $('view').innerHTML=html;
-    $('mesa').addEventListener('change', e=>{ MESA=e.target.value; });
-    $('mesa').addEventListener('input', e=>{ MESA=e.target.value; });
+    const mi=$('mesa'); if(mi){ mi.addEventListener('change', e=>{ MESA=e.target.value; }); mi.addEventListener('input', e=>{ MESA=e.target.value; }); }
   }
   function addCart(id){ const p=PRODS.find(x=>x.id===id); if(!p) return; const ex=CART.find(x=>x.producto_id===id); if(ex) ex.qty++; else CART.push({producto_id:p.id, nombre:nombreDesc(p), precio:p.precio||0, qty:1}); actualizarCart(); }
   function actualizarCart(){ const n=CART.reduce((s,x)=>s+x.qty,0), t=CART.reduce((s,x)=>s+x.precio*x.qty,0);
     $('cbInfo').childNodes[0].nodeValue=n+(n===1?' ítem':' ítems'); $('cbTot').textContent=fmt(t);
+    const sb=$('cbSend'); if(sb) sb.textContent = AGREGAR_A ? ('Agregar a '+AGREGAR_A.mesa) : 'Enviar a cocina';
     $('cartbar').classList.toggle('show', n>0 && TAB==='nueva');
   }
+  function agregarAbrir(id, mesa){ AGREGAR_A={pedido:id, mesa:mesa}; CART=[]; irA('nueva'); }
   async function enviarMesa(){
     if(CART.length===0) return;
+    const items=CART.map(x=>({producto_id:x.producto_id,qty:x.qty,nombre:x.nombre,precio:x.precio}));
+    if(AGREGAR_A){
+      try{ const { error }=await SB.rpc('agregar_a_cuenta',{ p_pedido_id:AGREGAR_A.pedido, p_items:items }); if(error) throw error;
+        const m=AGREGAR_A.mesa; CART=[]; AGREGAR_A=null; actualizarCart(); irA('abiertas'); alert('Agregado a '+m+'.');
+      }catch(e){ alert('No se pudo agregar: '+(e.message||e)); }
+      return;
+    }
     const mesa=(MESA||'').trim();
-    if(!mesa){ alert('Escribe el número de mesa.'); const mi=$('mesa'); if(mi) mi.focus(); return; }
-    try{ const { error }=await SB.rpc('crear_pedido_mesa',{ p_mesa:mesa, p_items:CART.map(x=>({producto_id:x.producto_id,qty:x.qty,nombre:x.nombre,precio:x.precio})) });
+    if(!mesa){ alert('Elige la mesa.'); const mi=$('mesa'); if(mi) mi.focus(); return; }
+    try{ const { error }=await SB.rpc('crear_pedido_mesa',{ p_mesa:mesa, p_items:items });
       if(error) throw error; CART=[]; MESA=''; actualizarCart(); irA('abiertas'); alert('Pedido enviado a cocina.');
     }catch(e){ alert('No se pudo enviar: '+(e.message||e)); }
   }
@@ -210,6 +229,7 @@
       const its=items.map(x=>'<div class="mc-it"><span>'+x.qty+'× '+esc(x.nombre_snap)+'</span><span>'+(x.precio_snap>0?fmt(x.subtotal):'En el local')+'</span></div>').join('');
       html+='<div class="card"><div class="mesa-card-h"><b>Mesa '+esc(p.mesa_numero||'?')+' · '+codigo(p.id)+'</b><span class="est" style="background:'+e.bg+';color:'+e.fg+'">'+esc(e.t)+'</span></div>'+
         '<div class="mc-body">'+its+'<div class="mc-tot"><span style="font-family:Oswald;text-transform:uppercase;font-size:.7rem;color:var(--marron-osc)">Total</span><b>'+fmt(p.total)+'</b></div>'+
+        '<button class="act add" onclick="agregarAbrir(\''+p.id+'\',\''+esc(p.mesa_numero||'')+'\')">+ Agregar a la cuenta</button>'+
         '<button class="act" onclick="cobrarAbrir(\''+p.id+'\',\''+esc(p.mesa_numero||'')+'\')">Cobrar</button></div></div>';
     });
     $('view').innerHTML=html;
