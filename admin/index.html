@@ -114,6 +114,31 @@
   .act.alt{background:#fff;color:var(--marron-osc);border-color:var(--marron-osc)}
   .act.danger{flex:0 0 auto;min-width:0;background:#fff;color:var(--rojo);border-color:#e3cfc0}
   .act:active{transform:translateY(2px)}
+  .act-note{flex:1 1 auto;font-family:'Oswald',sans-serif;font-size:.82rem;color:var(--gris);display:flex;align-items:center;justify-content:center;font-style:italic;min-width:108px}
+  /* ventas */
+  .v-big{background:var(--carbon);color:#fff;border-radius:18px;padding:18px;text-align:center;margin-bottom:14px}
+  .v-big .vn{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:.7rem;color:var(--amarillo-claro)}
+  .v-big .vv{font-family:'Anton',sans-serif;font-size:2.4rem;color:#fff;line-height:1}
+  .v-big .vs{font-size:.82rem;color:rgba(255,255,255,.7);margin-top:3px}
+  .v-row{display:flex;align-items:center;gap:10px;padding:11px 14px}
+  .v-row+.v-row{border-top:1px dashed rgba(107,58,30,.2)}
+  .v-row .vq{flex:0 0 auto;font-family:'Anton',sans-serif;color:var(--rojo);font-size:1.05rem;min-width:40px}
+  .v-row .vnm{flex:1 1 auto;font-family:'Oswald',sans-serif;font-weight:500}
+  .v-row .vm{font-family:'Anton',sans-serif;color:var(--carbon)}
+  /* carnet VIP (en clientes) */
+  .cli.tap{cursor:pointer}
+  .vip-boxes{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:10px 0}
+  .vip-bx{aspect-ratio:1;border-radius:9px;border:2px dashed rgba(107,58,30,.4);display:flex;align-items:center;justify-content:center;font-family:'Anton',sans-serif;font-size:.85rem;color:rgba(107,58,30,.4);background:#fff}
+  .vip-bx.on{border-style:solid;border-color:var(--marron-osc);background:var(--amarillo);color:var(--carbon)}
+  .vip-bx.free{background:var(--verde);border-color:var(--verde);color:#fff}
+  .vip-prog{text-align:center;font-family:'Oswald',sans-serif;color:var(--marron-osc);font-size:.88rem;margin:4px 0 10px}
+  .vip-btns{display:flex;flex-direction:column;gap:9px}
+  .vip-btns .b{font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.03em;font-size:.9rem;padding:13px;border-radius:12px;border:2px solid var(--marron-osc);cursor:pointer;background:var(--amarillo);color:var(--carbon)}
+  .vip-btns .b.sello{background:var(--carbon);color:var(--amarillo-claro);border-color:var(--carbon)}
+  .vip-btns .b.premio{background:var(--verde);color:#fff;border-color:var(--verde)}
+  .vip-btns .b:disabled{opacity:.45;cursor:default}
+  .vip-btns .b.ghost{background:none;border:none;color:var(--gris);font-size:.78rem}
+  .vip-msg{text-align:center;font-size:.82rem;color:var(--gris);min-height:1em;margin-top:8px}
 
   /* clientes */
   .cli{display:flex;align-items:center;gap:12px;padding:13px 14px}
@@ -258,6 +283,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13A4 4 0 0 1 16 11"/></svg>
       Clientes
     </button>
+    <button data-tab="ventas" onclick="irA('ventas')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+      Ventas
+    </button>
   </nav>
 </div>
 
@@ -348,6 +377,15 @@
   </div>
 </div>
 
+<!-- ===== HOJA: carnet VIP del cliente ===== -->
+<div class="sheet-bd" id="car-bd" onclick="cerrarSheet('car')"></div>
+<div class="sheet" id="car-sheet" role="dialog" aria-modal="true">
+  <div class="sheet-grip"></div>
+  <div class="sh-head"><h3 id="car-title">Carnet VIP</h3><button class="sheet-x" type="button" onclick="cerrarSheet('car')">×</button></div>
+  <div class="sh-body" id="car-body"></div>
+  <div class="sh-foot"><div class="vip-msg" id="car-msg"></div></div>
+</div>
+
 <script type="module" src="../supabase.js"></script>
 <script>
   // ====== util ======
@@ -390,7 +428,7 @@
     SB = window.supabaseClient;
     $('login-form').addEventListener('submit', onLogin);
     const { data:{ session } } = await SB.auth.getSession();
-    if(session){ const rol = await validarStaff(); if(rol){ entrar(rol); return; } await SB.auth.signOut(); }
+    if(session){ const rol = await validarStaff(); if(rol==='admin'){ entrar(rol); return; } await SB.auth.signOut(); }
     mostrarLogin();
   }
   async function onLogin(e){
@@ -400,7 +438,7 @@
       const { error } = await SB.auth.signInWithPassword({ email:$('email').value.trim(), password:$('pass').value });
       if(error){ msg.textContent='Correo o contraseña incorrectos.'; return; }
       const rol = await validarStaff();
-      if(!rol){ await SB.auth.signOut(); msg.textContent='Esta cuenta no tiene acceso al panel.'; return; }
+      if(rol!=='admin'){ await SB.auth.signOut(); msg.textContent = rol ? ('Esta cuenta es de '+rol+'. Usa la app de '+rol+'.') : 'Esta cuenta no tiene acceso al panel.'; return; }
       entrar(rol);
     }catch(err){ msg.textContent='No se pudo conectar. Intenta de nuevo.'; }
     finally{ btn.disabled=false; btn.textContent='Entrar'; }
@@ -416,7 +454,8 @@
     document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
     if(tab==='pedidos') cargarPedidos();
     else if(tab==='productos') cargarProductos();
-    else cargarClientes();
+    else if(tab==='clientes') cargarClientes();
+    else cargarVentas();
   }
   function setView(html){ $('view').innerHTML = html; }
   function cargando(t){ setView('<div class="loading">Cargando '+t+'…</div>'); }
@@ -465,11 +504,12 @@
       '<button class="act main" onclick="confirmarAbrir(\''+id+'\')">Confirmar y cobrar</button>'+
       '<button class="act alt" onclick="modificarAbrir(\''+id+'\')">Modificar</button>'+
       '<button class="act danger" onclick="cancelar(\''+id+'\')">Cancelar</button></div>';
-    if(e==='confirmado') return '<div class="ped-acts">'+
-      '<button class="act go" onclick="accion(\''+id+'\',\'en_proceso\')">En proceso</button>'+
+    if(e==='confirmado' || e==='en_proceso') return '<div class="ped-acts">'+
+      '<div class="act-note">'+(e==='en_proceso'?'Cocina preparando…':'En cola de cocina…')+'</div>'+
       '<button class="act danger" onclick="cancelar(\''+id+'\')">Cancelar</button></div>';
-    if(e==='en_proceso') return '<div class="ped-acts"><button class="act go" onclick="accion(\''+id+'\',\'listo\')">Listo</button></div>';
-    if(e==='listo') return '<div class="ped-acts"><button class="act main" onclick="enviarAbrir(\''+id+'\')">Enviar</button></div>';
+    if(e==='listo') return '<div class="ped-acts">'+
+      '<button class="act main" onclick="enviarAbrir(\''+id+'\')">Enviar</button>'+
+      '<button class="act danger" onclick="cancelar(\''+id+'\')">Cancelar</button></div>';
     return '';
   }
   function renderBandeja(peds){
@@ -735,16 +775,83 @@
     if(e1||e2){ setView('<div class="empty">No se pudo cargar.</div>'); return; }
     const por={}; (peds||[]).forEach(p=>{ if(!p.cliente_id) return; const a=por[p.cliente_id]||(por[p.cliente_id]={n:0,g:0}); a.n++; if(p.cerrado_at) a.g+=(p.total||0); });
     const rows=(cls||[]).slice().sort((a,b)=>((por[b.id]||{}).g||0)-((por[a.id]||{}).g||0));
-    let html='<div class="view-head"><div><div class="view-title">Clientes</div><div class="view-sub">'+rows.length+' clientes · gasto de ventas cerradas</div></div></div>';
+    CLIENTES_CACHE = rows;
+    let html='<div class="view-head"><div><div class="view-title">Clientes</div><div class="view-sub">'+rows.length+' clientes · toca para ver el carnet VIP</div></div></div>';
     if(rows.length===0){ setView(html+'<div class="empty">Aún no hay clientes.</div>'); return; }
     html+='<div class="card">';
     rows.forEach((c,i)=>{ const a=por[c.id]||{n:0,g:0};
       html+=(i>0?'<div style="border-top:1px dashed rgba(107,58,30,.2)"></div>':'')+
-        '<div class="cli"><div class="cli-av">'+esc(iniciales(c.nombre||c.celular))+'</div>'+
+        '<div class="cli tap" onclick="carnetAbrir(\''+c.id+'\')"><div class="cli-av">'+esc(iniciales(c.nombre||c.celular))+'</div>'+
         '<div class="cli-main"><div class="cli-name">'+esc(c.nombre||'Sin nombre')+'</div><div class="cli-cel">'+esc(c.celular||'')+'</div></div>'+
         '<div class="cli-stats"><div class="g">'+fmt(a.g)+'</div><div class="n">'+a.n+(a.n===1?' pedido':' pedidos')+'</div></div></div>';
     });
     setView(html+'</div>');
+  }
+
+  // ====== CARNET VIP (desde Clientes) ======
+  let CLIENTES_CACHE=[], carCli=null, carTarjeta=null;
+  async function carnetAbrir(id){
+    carCli = CLIENTES_CACHE.find(c=>c.id===id); if(!carCli) return;
+    $('car-title').textContent='Carnet · '+(carCli.nombre||carCli.celular||'');
+    $('car-body').innerHTML='<div class="loading">Cargando…</div>'; $('car-msg').textContent='';
+    abrirSheet('car');
+    await pintarCarnet();
+  }
+  async function pintarCarnet(){
+    const { data } = await SB.from('tarjetas_vip').select('sellos,ciclo,premio15_reclamado,premio30_reclamado').eq('cliente_id', carCli.id).maybeSingle();
+    carTarjeta = data || { sellos:0, ciclo:1, premio15_reclamado:false, premio30_reclamado:false };
+    const s = carTarjeta.sellos||0;
+    const enCarta = s<=15 ? s : s-15;
+    let boxes='';
+    for(let i=1;i<=15;i++){ const on=i<=enCarta; const premio=(i===15); boxes+='<div class="vip-bx'+(on?(premio?' free':' on'):'')+'">'+(premio?'★':i)+'</div>'; }
+    let prog;
+    if(s>=30) prog='Carnet completo (30/30).';
+    else if(s>=15) prog='Lleva '+s+' sellos · faltan '+(30-s)+' para el #30.';
+    else prog='Lleva '+s+' de 15 · faltan '+(15-s)+' para el almuerzo gratis.';
+    const p15 = carTarjeta.premio15_reclamado, p30 = carTarjeta.premio30_reclamado;
+    let btns='<button class="b sello" type="button" onclick="sellar()"'+(s>=30?' disabled':'')+'>+ Poner sello de hoy</button>';
+    btns+='<button class="b premio" type="button" onclick="reclamar(15)"'+((s>=15 && !p15)?'':' disabled')+'>'+(p15?'Premio #15 reclamado':'Reclamar almuerzo #15')+'</button>';
+    btns+='<button class="b premio" type="button" onclick="reclamar(30)"'+((s>=30 && !p30)?'':' disabled')+'>'+(p30?'Premio #30 reclamado':'Reclamar almuerzo #30')+'</button>';
+    if(s>=30 && p15 && p30) btns+='<button class="b ghost" type="button" onclick="reiniciar()">Reiniciar carnet (nueva ronda)</button>';
+    $('car-body').innerHTML='<div class="vip-prog">Carnet #'+(s<=15?1:2)+(carTarjeta.ciclo>1?(' · ronda '+carTarjeta.ciclo):'')+'</div>'+
+      '<div class="vip-boxes">'+boxes+'</div><div class="vip-prog">'+prog+'</div><div class="vip-btns">'+btns+'</div>';
+  }
+  async function sellar(){ $('car-msg').textContent='';
+    try{ const { error }=await SB.rpc('sellar_tarjeta',{ p_cliente_id:carCli.id }); if(error) throw error; await pintarCarnet(); $('car-msg').textContent='Sello agregado.'; }
+    catch(e){ $('car-msg').textContent=(e.message||''+e).replace('ya tiene un sello hoy','Este cliente ya tiene su sello de hoy.'); }
+  }
+  async function reclamar(cual){ $('car-msg').textContent='';
+    try{ const { error }=await SB.rpc('reclamar_premio',{ p_cliente_id:carCli.id, p_cual:cual }); if(error) throw error; await pintarCarnet(); $('car-msg').textContent='Premio #'+cual+' marcado como entregado.'; }
+    catch(e){ $('car-msg').textContent='No se pudo: '+(e.message||e); }
+  }
+  async function reiniciar(){ if(!confirm('¿Iniciar una nueva ronda de carnet para este cliente?')) return;
+    try{ const { error }=await SB.rpc('reiniciar_carnet',{ p_cliente_id:carCli.id }); if(error) throw error; await pintarCarnet(); $('car-msg').textContent='Nueva ronda iniciada.'; }
+    catch(e){ $('car-msg').textContent='No se pudo: '+(e.message||e); }
+  }
+
+  // ====== VENTAS DEL DÍA ======
+  function inicioHoyISO(){ const d=new Date(); d.setHours(0,0,0,0); return d.toISOString(); }
+  async function cargarVentas(){
+    cargando('ventas');
+    const { data, error } = await SB.from('pedidos')
+      .select('id,tipo,total,medio_pago,cerrado_at, comandas(comanda_items(nombre_snap,qty,subtotal,precio_snap))')
+      .not('cerrado_at','is',null).gte('cerrado_at', inicioHoyISO());
+    if(error){ setView('<div class="empty">No se pudo cargar.</div>'); return; }
+    const ventas=data||[];
+    let total=0; const prod={}; let porMedio={};
+    ventas.forEach(p=>{ total+=(p.total||0); if(p.medio_pago) porMedio[p.medio_pago]=(porMedio[p.medio_pago]||0)+(p.total||0);
+      (p.comandas||[]).flatMap(c=>c.comanda_items||[]).forEach(it=>{ const k=it.nombre_snap||'—'; const a=prod[k]||(prod[k]={q:0,m:0}); a.q+=(it.qty||0); a.m+=(it.subtotal||0); });
+    });
+    const hoy=new Date().toLocaleDateString('es-CO',{weekday:'long',day:'2-digit',month:'long'});
+    let html='<div class="view-head"><div><div class="view-title">Ventas de hoy</div><div class="view-sub">'+hoy+'</div></div></div>';
+    html+='<div class="v-big"><div class="vn">Total vendido hoy</div><div class="vv">'+fmt(total)+'</div><div class="vs">'+ventas.length+(ventas.length===1?' venta cerrada':' ventas cerradas')+'</div></div>';
+    const medios=Object.keys(porMedio);
+    if(medios.length){ html+='<div class="card">'+medios.map(m=>'<div class="v-row"><span class="vnm">'+esc(MEDIOS[m]||m)+'</span><span class="vm">'+fmt(porMedio[m])+'</span></div>').join('')+'</div>'; }
+    const lista=Object.keys(prod).map(k=>({n:k, ...prod[k]})).sort((a,b)=>b.m-a.m);
+    html+='<div class="cat-h" style="margin-top:16px">Por producto</div>';
+    if(lista.length===0) html+='<div class="empty">Aún no hay ventas cerradas hoy.</div>';
+    else html+='<div class="card">'+lista.map(x=>'<div class="v-row"><span class="vq">'+x.q+'×</span><span class="vnm">'+esc(x.n)+'</span><span class="vm">'+fmt(x.m)+'</span></div>').join('')+'</div>';
+    setView(html);
   }
 
   whenReady(bootstrap);

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>El Fogón de la Pesa — Mi carnet VIP</title>
+<meta name="theme-color" content="#1C140E">
+<meta name="description" content="Tu carnet de almuerzos VIP de El Fogón de la Pesa. Consulta tus sellos con tu número de celular.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--amarillo:#F6B500;--amarillo-claro:#FBD64B;--amarillo-suave:#FCE9A8;--rojo:#C0392B;--rojo-osc:#9A2417;--crema:#FAF5E6;--crema-card:#FFFDF6;--marron:#6B3A1E;--marron-osc:#3A1E10;--carbon:#1C140E;--texto:#2A1D12;--gris:#7A6A57;--verde:#1FA855;--safe-b:env(safe-area-inset-bottom,0px)}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Outfit',system-ui,sans-serif;color:var(--texto);background:radial-gradient(120% 80% at 50% 0%,#2c1a0d 0%,#1a0f07 55%,#120a04 100%);min-height:100dvh;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:440px;margin:0 auto;padding:28px 18px calc(28px + var(--safe-b))}
+  .brand{text-align:center;margin-bottom:18px}
+  .brand .mark{width:60px;height:60px;margin:0 auto 6px}
+  .brand .l1{font-family:'Oswald',sans-serif;font-weight:600;color:var(--amarillo);letter-spacing:.26em;font-size:.66rem;text-transform:uppercase}
+  .brand .l2{font-family:'Anton',sans-serif;color:#fff;font-size:1.7rem;line-height:.95;margin-top:2px}
+  .brand .l2 em{font-style:normal;color:var(--rojo)}
+  .brand .tag{font-family:'Oswald',sans-serif;color:rgba(255,255,255,.6);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;margin-top:6px}
+
+  .card{background:var(--crema-card);border:2px solid var(--marron-osc);border-radius:20px;padding:20px;box-shadow:0 14px 36px rgba(0,0,0,.4)}
+  .card h1{font-family:'Anton',sans-serif;font-size:1.3rem;color:var(--carbon);margin-bottom:4px}
+  .card p.sub{font-size:.85rem;color:var(--gris);margin-bottom:14px}
+  label{display:block;font-family:'Oswald',sans-serif;font-weight:500;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--marron-osc);margin:0 0 5px}
+  input{width:100%;padding:14px;border:2px solid var(--marron-osc);border-radius:12px;font-family:'Outfit',sans-serif;font-size:1.05rem;background:#fff;color:var(--texto)}
+  input:focus{outline:none;border-color:var(--rojo);box-shadow:0 0 0 3px rgba(192,57,43,.15)}
+  .btn{width:100%;margin-top:14px;background:var(--rojo);color:#fff;border:none;font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:1rem;padding:14px;border-radius:12px;cursor:pointer;box-shadow:0 4px 0 var(--rojo-osc)}
+  .btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--rojo-osc)}
+  .btn:disabled{opacity:.6}
+  .msg{margin-top:12px;font-size:.86rem;color:var(--rojo);min-height:1em;text-align:center}
+
+  .hi{font-family:'Anton',sans-serif;font-size:1.5rem;color:var(--carbon)}
+  .hi span{color:var(--rojo)}
+  .meta{font-size:.82rem;color:var(--gris);margin:2px 0 14px}
+  .boxes{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin:6px 0 4px}
+  .bx{aspect-ratio:1;border-radius:12px;border:2px dashed rgba(107,58,30,.4);display:flex;align-items:center;justify-content:center;font-family:'Anton',sans-serif;font-size:1.05rem;color:rgba(107,58,30,.4);background:#fff}
+  .bx.on{border-style:solid;border-color:var(--marron-osc);background:var(--amarillo);color:var(--carbon);box-shadow:0 3px 0 #c79100}
+  .bx.free{background:var(--verde);border-color:var(--verde);color:#fff;box-shadow:0 3px 0 #178b45}
+  .prog{font-family:'Oswald',sans-serif;text-align:center;color:var(--marron-osc);margin:12px 0 4px;font-size:.92rem}
+  .rew{display:flex;gap:10px;margin-top:14px}
+  .rw{flex:1 1 0;border-radius:14px;padding:12px;text-align:center;border:2px solid var(--marron-osc);background:#fff}
+  .rw .n{font-family:'Anton',sans-serif;font-size:1.6rem;line-height:1}
+  .rw .t{font-family:'Oswald',sans-serif;font-size:.66rem;text-transform:uppercase;letter-spacing:.04em;color:var(--marron-osc);margin-top:3px}
+  .rw.lock{opacity:.55}
+  .rw.ready{background:var(--amarillo-suave);border-color:var(--rojo)}
+  .rw.done{background:#e6f6ec;border-color:#9fd9b4}
+  .rw .st{font-family:'Oswald',sans-serif;font-weight:600;font-size:.62rem;text-transform:uppercase;margin-top:4px;color:var(--rojo)}
+  .rw.done .st{color:#157a3c}
+  .link{display:block;text-align:center;margin-top:16px;color:rgba(255,255,255,.7);font-family:'Oswald',sans-serif;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;text-decoration:none}
+  .otra{display:block;width:100%;margin-top:14px;background:none;border:none;color:var(--gris);font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.05em;font-size:.76rem;cursor:pointer;padding:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 60 60" aria-hidden="true">
+      <ellipse cx="30" cy="22" rx="20" ry="6" fill="#fff"/><path d="M11 22 C11 38 18 46 30 46 C42 46 49 38 49 22 Z" fill="#fff"/>
+      <path d="M16 48 l28 0" stroke="#6B3A1E" stroke-width="4" stroke-linecap="round"/><path d="M20 50 l20 0" stroke="#6B3A1E" stroke-width="4" stroke-linecap="round" transform="rotate(10 30 50)"/>
+      <path d="M24 38 q4 -8 0 -14 q6 6 3 14 q5 -3 4 -10 q4 7 -1 12 Z" fill="#C0392B"/>
+    </svg>
+    <div class="l1">El Fogón de</div><div class="l2">LA <em>PESA</em></div>
+    <div class="tag">Carnet de almuerzos VIP</div>
+  </div>
+
+  <div class="card" id="card"></div>
+  <a class="link" href="../">Ver el menú</a>
+</div>
+
+<script type="module" src="../supabase.js"></script>
+<script>
+  function whenReady(cb){ if(window.supabaseClient){ cb(); } else { setTimeout(()=>whenReady(cb),30); } }
+  const $=id=>document.getElementById(id);
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function soloDigitos(s){ return (s||'').replace(/\D/g,''); }
+  const KEY='fogon_carnet_cel';
+  let SB=null;
+
+  function vistaLogin(prefill){
+    $('card').innerHTML='<h1>Mi carnet VIP</h1><p class="sub">Consulta tus sellos con tu número de celular.</p>'+
+      '<label for="cel">Tu celular</label><input id="cel" type="tel" inputmode="numeric" placeholder="Ej: 300 123 4567" value="'+esc(prefill||'')+'">'+
+      '<button class="btn" id="vbtn" type="button">Ver mi carnet</button><div class="msg" id="msg"></div>';
+    $('vbtn').addEventListener('click', consultar);
+    $('cel').addEventListener('keydown', e=>{ if(e.key==='Enter') consultar(); });
+  }
+
+  async function consultar(){
+    const cel=soloDigitos($('cel').value);
+    const msg=$('msg'), b=$('vbtn');
+    if(cel.length<7){ msg.textContent='Escribe un número válido.'; return; }
+    msg.textContent=''; b.disabled=true; b.textContent='Consultando…';
+    try{
+      const { data, error }=await SB.rpc('carnet_por_celular',{ p_celular:cel });
+      if(error) throw error;
+      if(!data || !data.existe){ msg.textContent='No encontramos un carnet con ese número. Pide tu primer sello en el local.'; return; }
+      localStorage.setItem(KEY, cel);
+      vistaCarnet(data);
+    }catch(e){ msg.textContent='No se pudo consultar. Intenta de nuevo.'; }
+    finally{ b.disabled=false; b.textContent='Ver mi carnet'; }
+  }
+
+  function vistaCarnet(d){
+    const sellos=d.sellos||0;
+    const enCarta = sellos<=15 ? sellos : sellos-15;   // sellos visibles en la tarjeta de 15
+    const cartaNum = sellos<=15 ? 1 : 2;
+    let boxes='';
+    for(let i=1;i<=15;i++){
+      const on=i<=enCarta;
+      const esPremio=(i===15);
+      const cls = on ? (esPremio?'bx free':'bx on') : (esPremio?'bx':'bx');
+      const lbl = esPremio ? '★' : i;
+      boxes+='<div class="'+cls+'">'+lbl+'</div>';
+    }
+    function rew(n, claimed){
+      const ready = sellos>=n && !claimed;
+      const cls = claimed?'done':(ready?'ready':'lock');
+      const st = claimed?'Reclamado':(ready?'¡Disponible!':'');
+      return '<div class="rw '+cls+'"><div class="n">'+n+'</div><div class="t">almuerzo gratis</div>'+(st?'<div class="st">'+st+'</div>':'')+'</div>';
+    }
+    const faltan15 = Math.max(0, 15-sellos), faltan30 = Math.max(0, 30-sellos);
+    let prog;
+    if(sellos>=30) prog='¡Carnet completo! 🎉 Pide tus premios en el local.';
+    else if(sellos>=15) prog='Llevas '+sellos+' sellos · te faltan '+faltan30+' para el premio #30.';
+    else prog='Llevas '+sellos+' de 15 sellos · te faltan '+faltan15+' para tu almuerzo gratis.';
+
+    $('card').innerHTML='<div class="hi">Hola, <span>'+esc(d.nombre||'')+'</span></div>'+
+      '<div class="meta">Carnet #'+cartaNum+(d.ciclo>1?(' · ronda '+d.ciclo):'')+'</div>'+
+      '<div class="boxes">'+boxes+'</div>'+
+      '<div class="prog">'+prog+'</div>'+
+      '<div class="rew">'+rew(15, d.premio15_reclamado)+rew(30, d.premio30_reclamado)+'</div>'+
+      '<button class="otra" type="button" onclick="otroNumero()">Consultar otro número</button>';
+  }
+  function otroNumero(){ vistaLogin(localStorage.getItem(KEY)||''); }
+
+  whenReady(()=>{ SB=window.supabaseClient; const saved=localStorage.getItem(KEY);
+    if(saved){ vistaLogin(saved); /* mostrar login con prefill; el cliente toca Ver */ } else { vistaLogin(''); }
+  });
+</script>
+</body>
+</html>

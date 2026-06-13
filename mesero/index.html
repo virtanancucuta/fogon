@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>El Fogón — Mesera</title>
+<meta name="theme-color" content="#1C140E">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--amarillo:#F6B500;--amarillo-claro:#FBD64B;--amarillo-suave:#FCE9A8;--rojo:#C0392B;--rojo-osc:#9A2417;--crema:#FAF5E6;--crema-card:#FFFDF6;--marron:#6B3A1E;--marron-osc:#3A1E10;--carbon:#1C140E;--texto:#2A1D12;--gris:#7A6A57;--verde:#1FA855;--verde-osc:#178b45;--safe-b:env(safe-area-inset-bottom,0px)}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Outfit',system-ui,sans-serif;color:var(--texto);background:var(--crema);-webkit-font-smoothing:antialiased}
+  #login{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:radial-gradient(120% 90% at 50% 25%,#2c1a0d 0%,#1a0f07 60%,#120a04 100%)}
+  #login .l2{font-family:'Anton',sans-serif;color:#fff;font-size:1.9rem;text-align:center}
+  #login .l2 em{font-style:normal;color:var(--rojo)}
+  #login .tag{font-family:'Oswald',sans-serif;color:var(--amarillo);letter-spacing:.18em;text-transform:uppercase;font-size:.78rem;margin:6px 0 20px}
+  .login-card{width:100%;max-width:360px;background:var(--crema-card);border:2px solid var(--marron-osc);border-radius:20px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .login-card h1{font-family:'Anton',sans-serif;font-size:1.25rem;color:var(--carbon);margin-bottom:12px}
+  label{display:block;font-family:'Oswald',sans-serif;font-weight:500;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--marron-osc);margin:12px 0 5px}
+  input,select{width:100%;padding:13px 14px;border:2px solid var(--marron-osc);border-radius:12px;font-family:'Outfit',sans-serif;font-size:1rem;background:#fff;color:var(--texto)}
+  input:focus,select:focus{outline:none;border-color:var(--rojo);box-shadow:0 0 0 3px rgba(192,57,43,.15)}
+  .btn-primary{width:100%;background:var(--rojo);color:#fff;border:none;font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:1rem;padding:14px;border-radius:12px;cursor:pointer;box-shadow:0 4px 0 var(--rojo-osc)}
+  .btn-primary:active{transform:translateY(2px);box-shadow:0 2px 0 var(--rojo-osc)}
+  .btn-primary:disabled{opacity:.6}
+  #login .btn-primary{margin-top:16px}
+  .login-msg{margin-top:12px;font-size:.85rem;color:var(--rojo);min-height:1em;text-align:center}
+
+  #app{display:none;padding-bottom:calc(76px + var(--safe-b))}
+  header.top{position:sticky;top:0;z-index:30;background:var(--amarillo);border-bottom:3px solid var(--marron-osc);display:flex;align-items:center;gap:10px;padding:11px 16px}
+  header.top .ti{flex:1 1 auto}
+  header.top h1{font-family:'Anton',sans-serif;font-size:1.15rem;color:var(--rojo-osc)}
+  header.top h1 span{color:var(--carbon)}
+  header.top p{font-family:'Oswald',sans-serif;font-size:.58rem;text-transform:uppercase;letter-spacing:.12em;color:var(--marron-osc);margin-top:1px}
+  .logout{background:var(--carbon);color:var(--amarillo-claro);border:none;font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;font-size:.7rem;padding:9px 13px;border-radius:30px;cursor:pointer}
+  main{max-width:760px;margin:0 auto;padding:14px 16px 20px}
+  .empty{text-align:center;color:var(--gris);background:var(--crema-card);border:2px dashed var(--marron-osc);border-radius:16px;padding:32px 16px;font-family:'Oswald',sans-serif}
+
+  .cat-h{font-family:'Anton',sans-serif;font-size:1.02rem;color:var(--marron-osc);text-transform:uppercase;margin:16px 0 6px}
+  .cat-h:first-of-type{margin-top:4px}
+  .card{background:var(--crema-card);border:2px solid var(--marron-osc);border-radius:16px;overflow:hidden;box-shadow:0 4px 0 rgba(58,30,16,.08);margin-bottom:12px}
+  .pi{display:flex;align-items:center;gap:10px;padding:10px 13px;width:100%;background:none;border:none;border-bottom:1px dashed rgba(107,58,30,.18);text-align:left;font:inherit;color:inherit;cursor:pointer}
+  .pi:last-child{border-bottom:none}
+  .pi-n{flex:1 1 auto;font-family:'Oswald',sans-serif;font-weight:500;font-size:1.02rem}
+  .pi-p{font-family:'Anton',sans-serif;color:var(--rojo)}
+  .pi-add{flex:0 0 auto;width:32px;height:32px;border-radius:50%;background:var(--amarillo);border:2px solid var(--marron-osc);color:var(--carbon);font-family:'Anton',sans-serif;font-size:1.1rem;line-height:1}
+
+  .mesa-field{display:flex;gap:10px;align-items:flex-end;margin-bottom:8px}
+  .mesa-field .f1{flex:1 1 auto}
+  .ln{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed rgba(107,58,30,.2)}
+  .ln-n{flex:1 1 auto;font-family:'Oswald',sans-serif;font-weight:500}
+  .ln-cu{font-size:.76rem;color:var(--gris)}
+  .step{flex:0 0 auto;display:flex;align-items:center;border:2px solid var(--marron-osc);border-radius:30px;overflow:hidden;background:#fff}
+  .step button{width:34px;height:32px;border:none;background:var(--amarillo);color:var(--carbon);font-family:'Anton',sans-serif;font-size:1.05rem;cursor:pointer}
+  .step .qv{min-width:24px;text-align:center;font-family:'Oswald',sans-serif;font-weight:600}
+
+  .est{font-family:'Oswald',sans-serif;font-weight:600;font-size:.64rem;text-transform:uppercase;letter-spacing:.05em;padding:4px 10px;border-radius:30px}
+  .mesa-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--amarillo-suave);padding:9px 14px;border-bottom:2px solid var(--marron-osc)}
+  .mesa-card-h b{font-family:'Anton',sans-serif;font-size:1.15rem;color:var(--carbon)}
+  .mc-body{padding:11px 14px}
+  .mc-it{display:flex;justify-content:space-between;font-size:.86rem;padding:2px 0}
+  .mc-tot{display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 0;padding-top:8px;border-top:2px solid rgba(107,58,30,.18)}
+  .mc-tot b{font-family:'Anton',sans-serif;font-size:1.2rem}
+  .act{display:block;width:100%;border:none;font-family:'Oswald',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:.95rem;padding:13px;cursor:pointer;color:#fff;background:var(--verde);margin-top:10px;border-radius:11px}
+  .act:active{filter:brightness(.95)}
+
+  nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--carbon);display:flex;padding-bottom:var(--safe-b)}
+  nav.tabs button{flex:1 1 0;background:none;border:none;color:rgba(255,255,255,.6);font-family:'Oswald',sans-serif;font-weight:600;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;padding:13px 4px 14px;cursor:pointer}
+  nav.tabs button.active{color:var(--amarillo-claro)}
+
+  .cartbar{position:fixed;left:0;right:0;bottom:calc(50px + var(--safe-b));z-index:35;max-width:760px;margin:0 auto;background:var(--carbon);color:#fff;display:flex;align-items:center;gap:12px;padding:11px 16px;transform:translateY(180%);transition:transform .25s}
+  .cartbar.show{transform:none}
+  .cb-i{flex:1 1 auto;font-family:'Oswald',sans-serif}
+  .cb-i b{display:block;font-family:'Anton',sans-serif;color:var(--amarillo-claro);font-size:1.3rem}
+  .cb-send{background:var(--verde);color:#fff;border:none;font-family:'Oswald',sans-serif;font-weight:700;text-transform:uppercase;font-size:.92rem;padding:13px 16px;border-radius:11px;cursor:pointer}
+
+  .sheet-bd{position:fixed;inset:0;z-index:50;background:rgba(20,12,6,.55);opacity:0;visibility:hidden;transition:.25s}
+  .sheet-bd.show{opacity:1;visibility:visible}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;background:var(--crema);border-radius:22px 22px 0 0;max-width:760px;margin:0 auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.2,.8,.2,1);box-shadow:0 -10px 40px rgba(0,0,0,.35)}
+  .sheet.show{transform:none}
+  .sh-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 6px}
+  .sh-head h3{font-family:'Anton',sans-serif;font-size:1.3rem;color:var(--carbon)}
+  .sheet-x{width:36px;height:36px;border-radius:50%;border:none;background:var(--amarillo-suave);color:var(--marron-osc);font-size:1.25rem;cursor:pointer}
+  .sh-body{padding:8px 18px calc(18px + var(--safe-b))}
+  .pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .pay{font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;font-size:.95rem;padding:18px 10px;border-radius:14px;border:2px solid var(--marron-osc);background:var(--crema-card);color:var(--carbon);cursor:pointer}
+  .pay:active{background:var(--amarillo-suave)}
+</style>
+</head>
+<body>
+<div id="login">
+  <div class="l2">EL FOGÓN · <em>MESERA</em></div>
+  <div class="tag">Pedidos de mesa</div>
+  <div class="login-card">
+    <h1>Iniciar sesión</h1>
+    <form id="lf">
+      <label for="email">Correo</label><input id="email" type="email" autocomplete="username" inputmode="email" placeholder="mesera@elfogondelapesa.com" required>
+      <label for="pass">Contraseña</label><input id="pass" type="password" autocomplete="current-password" required>
+      <button class="btn-primary" id="lb" type="submit">Entrar</button>
+      <div class="login-msg" id="lm"></div>
+    </form>
+  </div>
+</div>
+
+<div id="app">
+  <header class="top">
+    <div class="ti"><h1>EL FOGÓN · <span>MESERA</span></h1><p id="quien">Pedidos de mesa</p></div>
+    <button class="logout" type="button" onclick="salir()">Salir</button>
+  </header>
+  <main id="view"></main>
+  <div class="cartbar" id="cartbar"><div class="cb-i" id="cbInfo">0 ítems<b id="cbTot">$0</b></div><button class="cb-send" onclick="enviarMesa()">Enviar a cocina</button></div>
+  <nav class="tabs"><button data-tab="nueva" class="active" onclick="irA('nueva')">Nueva mesa</button><button data-tab="abiertas" onclick="irA('abiertas')">Mesas abiertas</button></nav>
+</div>
+
+<!-- cobrar -->
+<div class="sheet-bd" id="cb-bd" onclick="cerrarSheet('cb')"></div>
+<div class="sheet" id="cb-sheet"><div class="sh-head"><h3 id="cb-title">Cobrar</h3><button class="sheet-x" onclick="cerrarSheet('cb')">×</button></div>
+  <div class="sh-body"><p style="color:var(--gris);font-size:.86rem;margin-bottom:8px">¿Con qué pagó?</p>
+    <div class="pay-grid">
+      <button class="pay" onclick="cobrarCon('efectivo')">Efectivo</button>
+      <button class="pay" onclick="cobrarCon('nequi')">Nequi</button>
+      <button class="pay" onclick="cobrarCon('daviplata')">Daviplata</button>
+      <button class="pay" onclick="cobrarCon('datafono')">Datáfono</button>
+    </div><div id="cb-msg" style="text-align:center;color:var(--gris);font-size:.82rem;min-height:1em;margin-top:10px"></div></div>
+</div>
+
+<script type="module" src="../supabase.js"></script>
+<script>
+  function whenReady(cb){ if(window.supabaseClient){ cb(); } else { setTimeout(()=>whenReady(cb),30); } }
+  const $=id=>document.getElementById(id);
+  function fmt(n){ return '$'+(Number(n)||0).toLocaleString('es-CO'); }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function codigo(id){ return '#'+String(id).slice(-4).toUpperCase(); }
+  function catLabel(c){ return c?((c.nombre||'')+(c.sub?(' '+c.sub):'')):''; }
+  function prefijoCat(c){ const key=c&&c.sub?c.nombre+'|'+c.sub:(c?c.nombre:''); const M={'Caldos':'Caldo','Medio caldo':'Medio caldo','Bandeja|250 gr':'Bandeja 250gr','Bandeja|150 gr':'Bandeja 150gr','Especiales':'','Bebidas':''}; if(key in M) return M[key]; return c?(c.nombre+(c.sub?(' '+c.sub.replace(/\s+/g,'')):'')):''; }
+  function nombreDesc(p){ const c=CATS.find(x=>x.id===p.categoria_id); const pf=prefijoCat(c); return (pf?pf+' ':'')+p.nombre; }
+  function abrirSheet(p){ $(p+'-sheet').classList.add('show'); $(p+'-bd').classList.add('show'); }
+  function cerrarSheet(p){ $(p+'-sheet').classList.remove('show'); $(p+'-bd').classList.remove('show'); }
+  const ESTADOS={confirmado:{t:'En cocina',bg:'#dbeafe',fg:'#1e40af'},en_proceso:{t:'En proceso',bg:'#ffe4c4',fg:'#9a4a00'},listo:{t:'Servido',bg:'#e9e0ff',fg:'#5b21b6'}};
+  let SB=null, CATS=[], PRODS=[], CART=[], TAB='nueva', canal=null, reloadT=null;
+
+  async function boot(){ SB=window.supabaseClient; $('lf').addEventListener('submit', onLogin);
+    const { data:{session} }=await SB.auth.getSession();
+    if(session){ if(await rolOk()){ entrar(); return; } await SB.auth.signOut(); }
+    $('login').style.display='flex';
+  }
+  async function rolOk(){ const { data }=await SB.rpc('rol_actual'); return data==='mesera'||data==='admin'; }
+  async function onLogin(e){ e.preventDefault(); const m=$('lm'),b=$('lb'); m.textContent=''; b.disabled=true; b.textContent='Entrando…';
+    try{ const { error }=await SB.auth.signInWithPassword({ email:$('email').value.trim(), password:$('pass').value });
+      if(error){ m.textContent='Correo o contraseña incorrectos.'; return; }
+      if(!(await rolOk())){ await SB.auth.signOut(); m.textContent='Esta cuenta no es de mesera.'; return; }
+      entrar();
+    }catch(err){ m.textContent='No se pudo conectar.'; } finally{ b.disabled=false; b.textContent='Entrar'; }
+  }
+  async function salir(){ desuscribir(); await SB.auth.signOut(); $('app').style.display='none'; $('login').style.display='flex'; $('email').value=''; $('pass').value=''; }
+  async function entrar(){ $('login').style.display='none'; $('app').style.display='block';
+    const [{data:c},{data:p}]=await Promise.all([ SB.from('categorias').select('id,nombre,sub,orden').eq('visible',true).order('orden'), SB.from('productos').select('id,categoria_id,nombre,precio,visible,orden').eq('visible',true) ]);
+    CATS=c||[]; PRODS=p||[]; irA('nueva');
+  }
+  function irA(tab){ TAB=tab; document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+    if(tab==='nueva'){ desuscribir(); vistaNueva(); } else { vistaAbiertas(); suscribir(); }
+    actualizarCart();
+  }
+
+  // ----- NUEVA -----
+  function vistaNueva(){
+    const ord={}; CATS.forEach(c=>ord[c.id]=c.orden);
+    const list=PRODS.slice().sort((a,b)=>(ord[a.categoria_id]||0)-(ord[b.categoria_id]||0)||(a.orden||0)-(b.orden||0));
+    let html='<div class="mesa-field"><div class="f1"><label for="mesa">Número de mesa</label><input id="mesa" type="text" inputmode="numeric" placeholder="Ej: 4" value="'+esc(MESA)+'"></div></div>';
+    let lastCat=null;
+    list.forEach(p=>{ const c=CATS.find(x=>x.id===p.categoria_id); const cl=catLabel(c);
+      if(cl!==lastCat){ if(lastCat!==null) html+='</div>'; html+='<div class="cat-h">'+esc(cl)+'</div><div class="card">'; lastCat=cl; }
+      const precio=p.precio>0?fmt(p.precio):'En el local';
+      html+='<button class="pi" type="button" onclick="addCart(\''+p.id+'\')"><span class="pi-n">'+esc(p.nombre)+'</span><span class="pi-p">'+precio+'</span><span class="pi-add">+</span></button>';
+    });
+    if(lastCat!==null) html+='</div>';
+    $('view').innerHTML=html;
+    $('mesa').addEventListener('input', e=>{ MESA=e.target.value; });
+  }
+  let MESA='';
+  function addCart(id){ const p=PRODS.find(x=>x.id===id); if(!p) return; const ex=CART.find(x=>x.producto_id===id); if(ex) ex.qty++; else CART.push({producto_id:p.id, nombre:nombreDesc(p), precio:p.precio||0, qty:1}); actualizarCart(); }
+  function actualizarCart(){ const n=CART.reduce((s,x)=>s+x.qty,0), t=CART.reduce((s,x)=>s+x.precio*x.qty,0);
+    $('cbInfo').childNodes[0].nodeValue=n+(n===1?' ítem':' ítems'); $('cbTot').textContent=fmt(t);
+    $('cartbar').classList.toggle('show', n>0 && TAB==='nueva');
+  }
+  async function enviarMesa(){
+    if(CART.length===0) return;
+    const mesa=(MESA||'').trim();
+    if(!mesa){ alert('Escribe el número de mesa.'); const mi=$('mesa'); if(mi) mi.focus(); return; }
+    try{ const { error }=await SB.rpc('crear_pedido_mesa',{ p_mesa:mesa, p_items:CART.map(x=>({producto_id:x.producto_id,qty:x.qty,nombre:x.nombre,precio:x.precio})) });
+      if(error) throw error; CART=[]; MESA=''; actualizarCart(); irA('abiertas'); alert('Pedido enviado a cocina.');
+    }catch(e){ alert('No se pudo enviar: '+(e.message||e)); }
+  }
+
+  // ----- ABIERTAS -----
+  async function vistaAbiertas(){
+    const { data, error }=await SB.from('pedidos').select('id,estado,mesa_numero,total,created_at, comandas(comanda_items(nombre_snap,qty,subtotal,precio_snap))')
+      .eq('tipo','mesa').in('estado',['confirmado','en_proceso','listo']).order('created_at',{ascending:true});
+    if(error){ $('view').innerHTML='<div class="empty">No se pudo cargar.</div>'; return; }
+    const peds=data||[];
+    if(peds.length===0){ $('view').innerHTML='<div class="empty">No hay mesas abiertas.</div>'; return; }
+    let html='';
+    peds.forEach(p=>{ const e=ESTADOS[p.estado]||{t:p.estado,bg:'#eee',fg:'#555'};
+      const items=(p.comandas||[]).flatMap(c=>c.comanda_items||[]);
+      const its=items.map(x=>'<div class="mc-it"><span>'+x.qty+'× '+esc(x.nombre_snap)+'</span><span>'+(x.precio_snap>0?fmt(x.subtotal):'En el local')+'</span></div>').join('');
+      html+='<div class="card"><div class="mesa-card-h"><b>Mesa '+esc(p.mesa_numero||'?')+' · '+codigo(p.id)+'</b><span class="est" style="background:'+e.bg+';color:'+e.fg+'">'+esc(e.t)+'</span></div>'+
+        '<div class="mc-body">'+its+'<div class="mc-tot"><span style="font-family:Oswald;text-transform:uppercase;font-size:.7rem;color:var(--marron-osc)">Total</span><b>'+fmt(p.total)+'</b></div>'+
+        '<button class="act" onclick="cobrarAbrir(\''+p.id+'\',\''+esc(p.mesa_numero||'')+'\')">Cobrar</button></div></div>';
+    });
+    $('view').innerHTML=html;
+  }
+  let cobId=null;
+  function cobrarAbrir(id,mesa){ cobId=id; $('cb-title').textContent='Cobrar Mesa '+(mesa||''); $('cb-msg').textContent=''; abrirSheet('cb'); }
+  async function cobrarCon(medio){ if(!cobId) return; $('cb-msg').textContent='Procesando…';
+    try{ const { error }=await SB.rpc('cobrar_pedido',{ p_pedido_id:cobId, p_medio:medio }); if(error) throw error; cerrarSheet('cb'); vistaAbiertas(); }
+    catch(e){ $('cb-msg').textContent='No se pudo: '+(e.message||e); }
+  }
+  function suscribir(){ if(canal) return; canal=SB.channel('mesera').on('postgres_changes',{event:'*',schema:'public',table:'pedidos'},()=>{ clearTimeout(reloadT); reloadT=setTimeout(()=>{ if(TAB==='abiertas') vistaAbiertas(); },400); }).subscribe(); }
+  function desuscribir(){ if(canal){ SB.removeChannel(canal); canal=null; } }
+
+  whenReady(boot);
+</script>
+</body>
+</html>

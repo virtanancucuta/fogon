@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>El Fogón — Cocina</title>
+<meta name="theme-color" content="#1C140E">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--amarillo:#F6B500;--amarillo-suave:#FCE9A8;--rojo:#C0392B;--rojo-osc:#9A2417;--crema:#FAF5E6;--crema-card:#FFFDF6;--marron:#6B3A1E;--marron-osc:#3A1E10;--carbon:#1C140E;--texto:#2A1D12;--gris:#7A6A57;--verde:#1FA855;--verde-osc:#178b45;--azul:#1e40af;--safe-b:env(safe-area-inset-bottom,0px)}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Outfit',system-ui,sans-serif;color:var(--texto);background:var(--crema);-webkit-font-smoothing:antialiased}
+  #login{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:radial-gradient(120% 90% at 50% 25%,#2c1a0d 0%,#1a0f07 60%,#120a04 100%)}
+  #login .l2{font-family:'Anton',sans-serif;color:#fff;font-size:1.9rem;text-align:center}
+  #login .l2 em{font-style:normal;color:var(--rojo)}
+  #login .tag{font-family:'Oswald',sans-serif;color:var(--amarillo);letter-spacing:.18em;text-transform:uppercase;font-size:.78rem;margin:6px 0 20px}
+  .login-card{width:100%;max-width:360px;background:var(--crema-card);border:2px solid var(--marron-osc);border-radius:20px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .login-card h1{font-family:'Anton',sans-serif;font-size:1.25rem;color:var(--carbon);margin-bottom:12px}
+  label{display:block;font-family:'Oswald',sans-serif;font-weight:500;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--marron-osc);margin:12px 0 5px}
+  input{width:100%;padding:13px 14px;border:2px solid var(--marron-osc);border-radius:12px;font-family:'Outfit',sans-serif;font-size:1rem;background:#fff;color:var(--texto)}
+  input:focus{outline:none;border-color:var(--rojo);box-shadow:0 0 0 3px rgba(192,57,43,.15)}
+  .btn-primary{width:100%;margin-top:16px;background:var(--rojo);color:#fff;border:none;font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:1rem;padding:14px;border-radius:12px;cursor:pointer;box-shadow:0 4px 0 var(--rojo-osc)}
+  .btn-primary:active{transform:translateY(2px);box-shadow:0 2px 0 var(--rojo-osc)}
+  .btn-primary:disabled{opacity:.6}
+  .login-msg{margin-top:12px;font-size:.85rem;color:var(--rojo);min-height:1em;text-align:center}
+
+  #app{display:none}
+  header.top{position:sticky;top:0;z-index:30;background:var(--carbon);color:#fff;display:flex;align-items:center;gap:10px;padding:12px 16px calc(12px)}
+  header.top .ti{flex:1 1 auto}
+  header.top h1{font-family:'Anton',sans-serif;font-size:1.2rem;color:var(--amarillo)}
+  header.top h1 span{color:#fff}
+  header.top p{font-family:'Oswald',sans-serif;font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.6);margin-top:1px}
+  .logout{background:#fff2;color:#fff;border:none;font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;font-size:.7rem;padding:9px 13px;border-radius:30px;cursor:pointer}
+  main{max-width:820px;margin:0 auto;padding:14px 14px calc(20px + var(--safe-b))}
+  .empty{text-align:center;color:var(--gris);background:var(--crema-card);border:2px dashed var(--marron-osc);border-radius:16px;padding:40px 16px;font-family:'Oswald',sans-serif;font-size:1.05rem;margin-top:20px}
+  .grid{display:grid;grid-template-columns:1fr;gap:14px}
+  @media(min-width:620px){.grid{grid-template-columns:1fr 1fr}}
+  .tk{background:var(--crema-card);border:2px solid var(--marron-osc);border-radius:18px;overflow:hidden;box-shadow:0 5px 0 rgba(58,30,16,.1)}
+  .tk.proc{border-color:var(--azul)}
+  .tk-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 15px;border-bottom:2px solid var(--marron-osc)}
+  .tk.new .tk-head{background:var(--amarillo-suave)}
+  .tk.proc .tk-head{background:#dbeafe}
+  .tk-cod{font-family:'Anton',sans-serif;font-size:1.2rem;color:var(--carbon)}
+  .tk-tipo{font-family:'Oswald',sans-serif;font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--marron-osc);text-align:right}
+  .tk-tipo b{display:block;font-family:'Anton',sans-serif;font-size:1.05rem;color:var(--rojo)}
+  .tk-body{padding:12px 15px}
+  .tk-it{display:flex;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px dashed rgba(107,58,30,.18)}
+  .tk-it:last-child{border-bottom:none}
+  .tk-q{font-family:'Anton',sans-serif;font-size:1.5rem;color:var(--rojo);min-width:38px}
+  .tk-n{font-family:'Oswald',sans-serif;font-weight:500;font-size:1.18rem;line-height:1.1}
+  .tk-time{font-family:'Oswald',sans-serif;font-size:.74rem;color:var(--gris);margin-top:8px}
+  .tk-act{display:block;width:100%;border:none;font-family:'Oswald',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:1.05rem;padding:16px;cursor:pointer;color:#fff}
+  .tk-act.empezar{background:var(--azul)}
+  .tk-act.entregar{background:var(--verde)}
+  .tk-act:active{filter:brightness(.94)}
+  .sec-h{font-family:'Anton',sans-serif;font-size:1.05rem;color:var(--marron-osc);text-transform:uppercase;margin:18px 2px 8px;letter-spacing:.02em}
+  .sec-h:first-child{margin-top:4px}
+</style>
+</head>
+<body>
+<div id="login">
+  <div class="l2">EL FOGÓN · <em>COCINA</em></div>
+  <div class="tag">Comandas</div>
+  <div class="login-card">
+    <h1>Iniciar sesión</h1>
+    <form id="lf">
+      <label for="email">Correo</label><input id="email" type="email" autocomplete="username" inputmode="email" placeholder="cocina@elfogondelapesa.com" required>
+      <label for="pass">Contraseña</label><input id="pass" type="password" autocomplete="current-password" required>
+      <button class="btn-primary" id="lb" type="submit">Entrar</button>
+      <div class="login-msg" id="lm"></div>
+    </form>
+  </div>
+</div>
+
+<div id="app">
+  <header class="top">
+    <div class="ti"><h1>EL FOGÓN · <span>COCINA</span></h1><p id="quien">Comandas en tiempo real</p></div>
+    <button class="logout" type="button" onclick="salir()">Salir</button>
+  </header>
+  <main id="view"></main>
+</div>
+
+<script type="module" src="../supabase.js"></script>
+<script>
+  function whenReady(cb){ if(window.supabaseClient){ cb(); } else { setTimeout(()=>whenReady(cb),30); } }
+  const $=id=>document.getElementById(id);
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function codigo(id){ return '#'+String(id).slice(-4).toUpperCase(); }
+  function hora(s){ try{ return new Date(s).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+  let SB=null, canal=null, reloadT=null;
+
+  async function boot(){
+    SB=window.supabaseClient;
+    $('lf').addEventListener('submit', onLogin);
+    const { data:{session} }=await SB.auth.getSession();
+    if(session){ const ok=await rolOk(); if(ok){ entrar(); return; } await SB.auth.signOut(); }
+    $('login').style.display='flex';
+  }
+  async function rolOk(){ const { data }=await SB.rpc('rol_actual'); return data==='cocina'||data==='admin'; }
+  async function onLogin(e){
+    e.preventDefault(); const m=$('lm'),b=$('lb'); m.textContent=''; b.disabled=true; b.textContent='Entrando…';
+    try{
+      const { error }=await SB.auth.signInWithPassword({ email:$('email').value.trim(), password:$('pass').value });
+      if(error){ m.textContent='Correo o contraseña incorrectos.'; return; }
+      if(!(await rolOk())){ await SB.auth.signOut(); m.textContent='Esta cuenta no es de cocina.'; return; }
+      entrar();
+    }catch(err){ m.textContent='No se pudo conectar.'; } finally{ b.disabled=false; b.textContent='Entrar'; }
+  }
+  async function salir(){ desuscribir(); await SB.auth.signOut(); $('app').style.display='none'; $('login').style.display='flex'; $('email').value=''; $('pass').value=''; }
+  function entrar(){ $('login').style.display='none'; $('app').style.display='block'; cargar(); suscribir(); }
+
+  async function cargar(){
+    const { data, error }=await SB.from('pedidos')
+      .select('id,tipo,estado,mesa_numero,created_at, comandas(comanda_items(nombre_snap,qty))')
+      .in('estado',['confirmado','en_proceso']).order('created_at',{ascending:true});
+    if(error){ $('view').innerHTML='<div class="empty">No se pudo cargar.</div>'; return; }
+    const peds=data||[];
+    const nuevos=peds.filter(p=>p.estado==='confirmado'), proc=peds.filter(p=>p.estado==='en_proceso');
+    if(peds.length===0){ $('view').innerHTML='<div class="empty">No hay comandas pendientes 🍲</div>'; return; }
+    let html='';
+    if(nuevos.length){ html+='<div class="sec-h">Por hacer ('+nuevos.length+')</div><div class="grid">'+nuevos.map(p=>tk(p,'new')).join('')+'</div>'; }
+    if(proc.length){ html+='<div class="sec-h">En proceso ('+proc.length+')</div><div class="grid">'+proc.map(p=>tk(p,'proc')).join('')+'</div>'; }
+    $('view').innerHTML=html;
+  }
+  function tk(p, cls){
+    const items=(p.comandas||[]).flatMap(c=>c.comanda_items||[]);
+    const its=items.map(x=>'<div class="tk-it"><span class="tk-q">'+x.qty+'×</span><span class="tk-n">'+esc(x.nombre_snap)+'</span></div>').join('');
+    const tipo = p.tipo==='mesa' ? ('Mesa <b>'+esc(p.mesa_numero||'?')+'</b>') : 'Domicilio';
+    const act = p.estado==='confirmado'
+      ? '<button class="tk-act empezar" onclick="avanzar(\''+p.id+'\',\'en_proceso\')">Empezar</button>'
+      : '<button class="tk-act entregar" onclick="avanzar(\''+p.id+'\',\'listo\')">Entregado</button>';
+    return '<div class="tk '+cls+'"><div class="tk-head"><span class="tk-cod">'+codigo(p.id)+'</span><span class="tk-tipo">'+tipo+'</span></div>'+
+      '<div class="tk-body">'+its+'<div class="tk-time">Recibido '+hora(p.created_at)+'</div></div>'+act+'</div>';
+  }
+  async function avanzar(id, a){
+    try{ const { error }=await SB.rpc('cocina_avanzar',{ p_pedido_id:id, p_a:a }); if(error) throw error; cargar(); }
+    catch(e){ alert('No se pudo: '+(e.message||e)); }
+  }
+  function suscribir(){
+    if(canal) return;
+    canal=SB.channel('cocina').on('postgres_changes',{event:'*',schema:'public',table:'pedidos'},()=>{ clearTimeout(reloadT); reloadT=setTimeout(cargar,400); }).subscribe();
+  }
+  function desuscribir(){ if(canal){ SB.removeChannel(canal); canal=null; } }
+
+  whenReady(boot);
+</script>
+</body>
+</html>
