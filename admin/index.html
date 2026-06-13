@@ -523,7 +523,7 @@
     return '';
   }
   function renderBandeja(peds){
-    const cont=$('bandeja');
+    const cont=$('bandeja'); if(!cont) return;
     if(peds.length===0){ cont.innerHTML='<div class="empty">No hay pedidos aquí.</div>'; return; }
     let html='';
     peds.forEach(p=>{
