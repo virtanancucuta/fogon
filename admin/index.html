@@ -135,6 +135,33 @@
   .vsum .t{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:.6rem;letter-spacing:.03em;color:var(--marron-osc)}
   .vsum .v{font-family:'Anton',sans-serif;font-size:1.05rem;color:var(--rojo);line-height:1.05;margin-top:3px;word-break:break-all}
   .vsum .n{font-size:.6rem;color:var(--gris);margin-top:2px}
+  /* mesas (mapa del salón) */
+  .mesa-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .mesa{border:2px solid var(--marron-osc);border-radius:16px;overflow:hidden;background:var(--crema-card);box-shadow:0 4px 0 rgba(58,30,16,.08)}
+  .mesa.ocupada{cursor:pointer}
+  .mesa-top{padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .mesa.libre .mesa-top{background:#e6f6ec}
+  .mesa.cocina .mesa-top{background:#dbeafe}
+  .mesa.proc .mesa-top{background:#ffe4c4}
+  .mesa.servido .mesa-top{background:#e9e0ff}
+  .mesa-nom{font-family:'Anton',sans-serif;font-size:1.05rem;color:var(--carbon)}
+  .mesa-est{font-family:'Oswald',sans-serif;font-weight:600;font-size:.56rem;text-transform:uppercase;letter-spacing:.03em;padding:3px 7px;border-radius:30px;background:#fff;border:1px solid rgba(107,58,30,.25);color:var(--marron-osc);text-align:right}
+  .mesa-body{padding:8px 12px 11px}
+  .mesa-libre-txt{color:var(--gris);font-family:'Oswald',sans-serif;font-size:.84rem;padding:4px 0}
+  .mesa-its{font-size:.78rem;color:var(--texto);line-height:1.35}
+  .mesa-tot{display:flex;justify-content:space-between;align-items:baseline;margin-top:7px;padding-top:7px;border-top:1px dashed rgba(107,58,30,.22)}
+  .mesa-tot b{font-family:'Anton',sans-serif;font-size:1.05rem;color:var(--rojo)}
+  .mesa-tot span{font-family:'Oswald',sans-serif;font-size:.6rem;text-transform:uppercase;color:var(--marron-osc)}
+  .mesa-fin{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px}
+  .mesa-fin+.mesa-fin{border-top:1px dashed rgba(107,58,30,.2)}
+  .mesa-fin .mf-n{font-family:'Oswald',sans-serif;font-weight:600}
+  .mesa-fin .mf-s{font-size:.74rem;color:var(--gris)}
+  .mesa-fin .mf-t{font-family:'Anton',sans-serif;color:var(--carbon)}
+  .em-row{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px dashed rgba(107,58,30,.2)}
+  .em-row input{flex:1 1 auto;padding:10px 12px;border:2px solid var(--marron-osc);border-radius:10px;font-family:'Outfit',sans-serif;font-size:.95rem;background:#fff;color:var(--texto)}
+  .em-row .em-x{flex:0 0 auto;background:none;border:none;color:var(--rojo);font-family:'Oswald',sans-serif;font-size:.7rem;text-transform:uppercase;cursor:pointer}
+  .em-add{display:flex;gap:8px;margin-top:12px}
+  .em-add input{flex:1 1 auto;padding:11px 12px;border:2px solid var(--marron-osc);border-radius:10px;font-family:'Outfit',sans-serif;font-size:1rem;background:#fff;color:var(--texto)}
   /* carnet VIP (en clientes) */
   .cli.tap{cursor:pointer}
   .vip-boxes{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:10px 0}
@@ -285,6 +312,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
       Pedidos
     </button>
+    <button data-tab="mesas" onclick="irA('mesas')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="6" rx="1"/><path d="M6 15v4M18 15v4M6 9V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3"/></svg>
+      Mesas
+    </button>
     <button data-tab="productos" onclick="irA('productos')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18M3 9l1.5-4.5A2 2 0 0 1 6.4 3h11.2a2 2 0 0 1 1.9 1.5L21 9M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/></svg>
       Productos
@@ -396,6 +427,37 @@
   <div class="sh-foot"><div class="vip-msg" id="car-msg"></div></div>
 </div>
 
+<!-- ===== HOJA: mesa (detalle + cobrar) ===== -->
+<div class="sheet-bd" id="mt-bd" onclick="cerrarSheet('mt')"></div>
+<div class="sheet" id="mt-sheet" role="dialog" aria-modal="true">
+  <div class="sheet-grip"></div>
+  <div class="sh-head"><h3 id="mt-title">Mesa</h3><button class="sheet-x" type="button" onclick="cerrarSheet('mt')">×</button></div>
+  <div class="sh-body" id="mt-body"></div>
+  <div class="sh-foot">
+    <div style="font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:.72rem;letter-spacing:.06em;color:var(--marron-osc);text-align:center;margin-bottom:8px">Cobrar — ¿cómo pagó?</div>
+    <div class="pay-grid">
+      <button class="pay" type="button" onclick="cobrarMesaCon('efectivo')">Efectivo</button>
+      <button class="pay" type="button" onclick="cobrarMesaCon('nequi')">Nequi</button>
+      <button class="pay" type="button" onclick="cobrarMesaCon('daviplata')">Daviplata</button>
+      <button class="pay" type="button" onclick="cobrarMesaCon('datafono')">Datáfono</button>
+    </div>
+    <div class="vip-msg" id="mt-msg"></div>
+  </div>
+</div>
+
+<!-- ===== HOJA: editar mesas ===== -->
+<div class="sheet-bd" id="em-bd" onclick="cerrarSheet('em')"></div>
+<div class="sheet" id="em-sheet" role="dialog" aria-modal="true">
+  <div class="sheet-grip"></div>
+  <div class="sh-head"><h3>Editar mesas</h3><button class="sheet-x" type="button" onclick="cerrarSheet('em')">×</button></div>
+  <div class="sh-body">
+    <p style="color:var(--gris);font-size:.84rem;margin-bottom:6px">Agrega, renombra o quita mesas. La mesera elige de esta lista al tomar pedidos.</p>
+    <div id="em-list"></div>
+    <div class="em-add"><input id="em-nueva" type="text" placeholder="Ej: Mesa 7 o Terraza 1"><button class="btn-sm" type="button" onclick="agregarMesa()">Agregar</button></div>
+    <div class="vip-msg" id="em-msg"></div>
+  </div>
+</div>
+
 <script type="module" src="../supabase.js"></script>
 <script>
   // ====== util ======
@@ -459,10 +521,11 @@
   // ====== NAV ======
   let TAB='pedidos';
   function irA(tab){
-    if(tab!=='pedidos') desuscribir();
+    if(tab!=='pedidos' && tab!=='mesas') desuscribir();
     TAB=tab;
     document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
     if(tab==='pedidos') cargarPedidos();
+    else if(tab==='mesas') cargarMesas();
     else if(tab==='productos') cargarProductos();
     else if(tab==='clientes') cargarClientes();
     else cargarVentas();
@@ -551,7 +614,7 @@
   function suscribir(){
     if(canal) return;
     canal = SB.channel('bandeja').on('postgres_changes', {event:'*', schema:'public', table:'pedidos'}, ()=>{
-      clearTimeout(reloadT); reloadT=setTimeout(()=>{ if(TAB==='pedidos') refrescarBandeja(); }, 400);
+      clearTimeout(reloadT); reloadT=setTimeout(()=>{ if(TAB==='pedidos') refrescarBandeja(); else if(TAB==='mesas') refrescarMesas(); }, 400);
     }).subscribe();
   }
   function desuscribir(){ if(canal){ SB.removeChannel(canal); canal=null; } }
@@ -887,6 +950,79 @@
     const inp=$('vfecha'); if(inp) inp.addEventListener('change', e=>{ if(e.target.value) cargarVentas(e.target.value); });
   }
   function ventasAyer(){ const d=new Date(); d.setDate(d.getDate()-1); cargarVentas(ymd(d)); }
+
+  // ====== MESAS (mapa del salón: ver + cobrar) ======
+  let MESAS=[], MESA_PEDS=[], MESA_FIN=[], mtPedido=null, MESAS_CFG=[];
+  const ESTMESA={confirmado:{t:'En cocina',cls:'cocina'},en_proceso:{t:'En proceso',cls:'proc'},listo:{t:'Servido · por cobrar',cls:'servido'}};
+  function cargarMesas(){
+    setView('<div class="view-head"><div><div class="view-title">Mesas</div><div class="view-sub">El salón en tiempo real</div></div>'+
+      '<button class="btn-ghost" type="button" onclick="editarMesas()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Editar</button></div><div id="mesasvw"></div>');
+    refrescarMesas(); suscribir();
+  }
+  async function refrescarMesas(){
+    const cont=$('mesasvw'); if(!cont) return;
+    if(!cont.dataset.loaded) cont.innerHTML='<div class="loading">Cargando salón…</div>';
+    const dS=new Date(); dS.setHours(0,0,0,0);
+    const [{data:mesas},{data:act},{data:fin}] = await Promise.all([
+      SB.from('mesas').select('id,nombre,orden').eq('activa',true).order('orden'),
+      SB.from('pedidos').select('id,estado,mesa_numero,total, comandas(comanda_items(nombre_snap,qty))').eq('tipo','mesa').in('estado',['confirmado','en_proceso','listo']).order('created_at',{ascending:true}),
+      SB.from('pedidos').select('id,mesa_numero,total,medio_pago,cerrado_at').eq('tipo','mesa').eq('estado','cobrado').gte('cerrado_at', dS.toISOString()).order('cerrado_at',{ascending:false})
+    ]);
+    if(!$('mesasvw')) return;
+    cont.dataset.loaded='1';
+    MESAS=mesas||[]; MESA_PEDS=act||[]; MESA_FIN=fin||[];
+    renderMesas();
+  }
+  function renderMesas(){
+    const cont=$('mesasvw'); if(!cont) return;
+    const porMesa={}; MESA_PEDS.forEach(p=>{ if(!porMesa[p.mesa_numero]) porMesa[p.mesa_numero]=p; });
+    let html = MESAS.length ? '<div class="mesa-grid">' : '<div class="empty">No hay mesas configuradas. Toca «Editar» para agregarlas.</div>';
+    MESAS.forEach(m=>{
+      const p=porMesa[m.nombre];
+      if(!p){
+        html+='<div class="mesa libre"><div class="mesa-top"><span class="mesa-nom">'+esc(m.nombre)+'</span><span class="mesa-est">Libre</span></div><div class="mesa-body"><div class="mesa-libre-txt">Sin pedido</div></div></div>';
+      }else{
+        const e=ESTMESA[p.estado]||{t:p.estado,cls:''};
+        const its=(p.comandas||[]).flatMap(c=>c.comanda_items||[]).map(x=>x.qty+'× '+esc(x.nombre_snap)).join(', ');
+        html+='<div class="mesa ocupada '+e.cls+'" onclick="mesaAbrir(\''+p.id+'\')"><div class="mesa-top"><span class="mesa-nom">'+esc(m.nombre)+'</span><span class="mesa-est">'+esc(e.t)+'</span></div>'+
+          '<div class="mesa-body"><div class="mesa-its">'+its+'</div><div class="mesa-tot"><span>Total</span><b>'+fmt(p.total)+'</b></div></div></div>';
+      }
+    });
+    if(MESAS.length) html+='</div>';
+    html+='<div class="cat-h" style="margin-top:16px">Finalizadas hoy ('+MESA_FIN.length+')</div>';
+    html+= MESA_FIN.length ? '<div class="card">'+MESA_FIN.map(p=>'<div class="mesa-fin"><div><div class="mf-n">Mesa '+esc(p.mesa_numero||'?')+'</div><div class="mf-s">'+hora(p.cerrado_at)+' · '+esc(MEDIOS[p.medio_pago]||p.medio_pago||'')+'</div></div><div class="mf-t">'+fmt(p.total)+'</div></div>').join('')+'</div>'
+      : '<div class="empty">Aún no hay mesas finalizadas hoy.</div>';
+    cont.innerHTML=html;
+  }
+  function mesaAbrir(pedidoId){
+    const p=MESA_PEDS.find(x=>x.id===pedidoId); if(!p) return; mtPedido=pedidoId;
+    $('mt-title').textContent='Mesa '+(p.mesa_numero||''); $('mt-msg').textContent='';
+    const its=(p.comandas||[]).flatMap(c=>c.comanda_items||[]).map(x=>'<div class="ped-it"><span>'+x.qty+'× '+esc(x.nombre_snap)+'</span></div>').join('');
+    $('mt-body').innerHTML='<div class="ped-items" style="border-top:none;padding-top:0">'+(its||'<div class="ped-it"><span>Sin ítems</span></div>')+'</div><div class="ped-tot"><span>Total</span><b>'+fmt(p.total)+'</b></div>';
+    abrirSheet('mt');
+  }
+  async function cobrarMesaCon(medio){
+    if(!mtPedido) return; $('mt-msg').textContent='Procesando…';
+    try{ const { error }=await SB.rpc('cobrar_pedido',{ p_pedido_id:mtPedido, p_medio:medio }); if(error) throw error; cerrarSheet('mt'); refrescarMesas(); }
+    catch(e){ $('mt-msg').textContent='No se pudo: '+(e.message||e); }
+  }
+  async function editarMesas(){ await cargarMesasLista(); $('em-msg').textContent=''; abrirSheet('em'); }
+  async function cargarMesasLista(){ const { data }=await SB.from('mesas').select('id,nombre,orden').eq('activa',true).order('orden'); MESAS_CFG=data||[]; pintarMesasCfg(); }
+  function pintarMesasCfg(){
+    $('em-list').innerHTML = MESAS_CFG.length ? MESAS_CFG.map(m=>'<div class="em-row"><input value="'+esc(m.nombre)+'" onchange="renombrarMesa(\''+m.id+'\',this.value)"><button class="em-x" type="button" onclick="quitarMesa(\''+m.id+'\')">Quitar</button></div>').join('') : '<div style="color:var(--gris);padding:6px 0">Aún no hay mesas. Agrega la primera abajo.</div>';
+  }
+  async function agregarMesa(){
+    const nom=$('em-nueva').value.trim(); if(!nom){ $('em-msg').textContent='Escribe un nombre.'; return; }
+    const orden=(MESAS_CFG.length?Math.max.apply(null,MESAS_CFG.map(m=>m.orden||0)):0)+1;
+    try{ const { error }=await SB.from('mesas').insert({nombre:nom, orden}); if(error) throw error; $('em-nueva').value=''; $('em-msg').textContent=''; await cargarMesasLista(); }
+    catch(e){ $('em-msg').textContent='No se pudo: '+(e.message||e); }
+  }
+  async function renombrarMesa(id,nom){ nom=(nom||'').trim(); if(!nom) return;
+    try{ await SB.from('mesas').update({nombre:nom}).eq('id',id); await cargarMesasLista(); }catch(e){ $('em-msg').textContent='No se pudo renombrar.'; }
+  }
+  async function quitarMesa(id){ if(!confirm('¿Quitar esta mesa de la lista?')) return;
+    try{ await SB.from('mesas').update({activa:false}).eq('id',id); await cargarMesasLista(); }catch(e){ $('em-msg').textContent='No se pudo quitar.'; }
+  }
 
   whenReady(bootstrap);
 </script>

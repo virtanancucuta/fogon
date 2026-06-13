@@ -138,7 +138,7 @@
   function abrirSheet(p){ $(p+'-sheet').classList.add('show'); $(p+'-bd').classList.add('show'); }
   function cerrarSheet(p){ $(p+'-sheet').classList.remove('show'); $(p+'-bd').classList.remove('show'); }
   const ESTADOS={confirmado:{t:'En cocina',bg:'#dbeafe',fg:'#1e40af'},en_proceso:{t:'En proceso',bg:'#ffe4c4',fg:'#9a4a00'},listo:{t:'Servido',bg:'#e9e0ff',fg:'#5b21b6'}};
-  let SB=null, CATS=[], PRODS=[], CART=[], TAB='nueva', canal=null, reloadT=null, MESA='';
+  let SB=null, CATS=[], PRODS=[], CART=[], TAB='nueva', canal=null, reloadT=null, MESA='', MESAS_LISTA=[];
 
   async function boot(){ SB=window.supabaseClient; $('lf').addEventListener('submit', onLogin);
     const { data:{session} }=await SB.auth.getSession();
@@ -155,8 +155,8 @@
   }
   async function salir(){ desuscribir(); await SB.auth.signOut(); $('app').style.display='none'; $('login').style.display='flex'; $('email').value=''; $('pass').value=''; }
   async function entrar(){ $('login').style.display='none'; $('app').style.display='block';
-    const [{data:c},{data:p}]=await Promise.all([ SB.from('categorias').select('id,nombre,sub,orden').eq('visible',true).order('orden'), SB.from('productos').select('id,categoria_id,nombre,precio,visible,orden').eq('visible',true) ]);
-    CATS=c||[]; PRODS=p||[]; irA('nueva');
+    const [{data:c},{data:p},{data:ms}]=await Promise.all([ SB.from('categorias').select('id,nombre,sub,orden').eq('visible',true).order('orden'), SB.from('productos').select('id,categoria_id,nombre,precio,visible,orden').eq('visible',true), SB.from('mesas').select('id,nombre,orden').eq('activa',true).order('orden') ]);
+    CATS=c||[]; PRODS=p||[]; MESAS_LISTA=ms||[]; irA('nueva');
   }
   function irA(tab){ TAB=tab; document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
     if(tab==='nueva'){ desuscribir(); vistaNueva(); } else { vistaAbiertas(); suscribir(); }
@@ -167,7 +167,11 @@
   function vistaNueva(){
     const ord={}; CATS.forEach(c=>ord[c.id]=c.orden);
     const list=PRODS.slice().sort((a,b)=>(ord[a.categoria_id]||0)-(ord[b.categoria_id]||0)||(a.orden||0)-(b.orden||0));
-    let html='<div class="mesa-field"><div class="f1"><label for="mesa">Número de mesa</label><input id="mesa" type="text" inputmode="numeric" placeholder="Ej: 4" value="'+esc(MESA)+'"></div></div>';
+    const opts=MESAS_LISTA.map(m=>'<option value="'+esc(m.nombre)+'"'+(m.nombre===MESA?' selected':'')+'>'+esc(m.nombre)+'</option>').join('');
+    const campoMesa = MESAS_LISTA.length
+      ? '<select id="mesa"><option value="">Elige la mesa…</option>'+opts+'</select>'
+      : '<input id="mesa" type="text" placeholder="Mesa (pide a la dueña que las configure)" value="'+esc(MESA)+'">';
+    let html='<div class="mesa-field"><div class="f1"><label for="mesa">Mesa</label>'+campoMesa+'</div></div>';
     let lastCat=null;
     list.forEach(p=>{ const c=CATS.find(x=>x.id===p.categoria_id); const cl=catLabel(c);
       if(cl!==lastCat){ if(lastCat!==null) html+='</div>'; html+='<div class="cat-h">'+esc(cl)+'</div><div class="card">'; lastCat=cl; }
@@ -176,6 +180,7 @@
     });
     if(lastCat!==null) html+='</div>';
     $('view').innerHTML=html;
+    $('mesa').addEventListener('change', e=>{ MESA=e.target.value; });
     $('mesa').addEventListener('input', e=>{ MESA=e.target.value; });
   }
   function addCart(id){ const p=PRODS.find(x=>x.id===id); if(!p) return; const ex=CART.find(x=>x.producto_id===id); if(ex) ex.qty++; else CART.push({producto_id:p.id, nombre:nombreDesc(p), precio:p.precio||0, qty:1}); actualizarCart(); }
