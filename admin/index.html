@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>El Fogón de la Pesa — Panel</title>
+<meta name="theme-color" content="#1C140E">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --amarillo:#F6B500;--amarillo-claro:#FBD64B;--amarillo-suave:#FCE9A8;
+    --rojo:#C0392B;--rojo-osc:#9A2417;
+    --crema:#FAF5E6;--crema-card:#FFFDF6;
+    --marron:#6B3A1E;--marron-osc:#3A1E10;--carbon:#1C140E;
+    --texto:#2A1D12;--gris:#7A6A57;--verde:#1FA855;
+    --safe-b:env(safe-area-inset-bottom,0px);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Outfit',system-ui,sans-serif;color:var(--texto);background:var(--crema);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  img{max-width:100%;display:block}
+
+  /* ---------- LOGIN ---------- */
+  #login{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:radial-gradient(120% 90% at 50% 25%,#2c1a0d 0%,#1a0f07 60%,#120a04 100%)}
+  #login .mark{width:72px;height:72px;margin-bottom:10px}
+  #login .l1{font-family:'Oswald',sans-serif;font-weight:600;color:var(--amarillo);letter-spacing:.28em;font-size:.72rem;text-transform:uppercase;text-align:center}
+  #login .l2{font-family:'Anton',sans-serif;color:#fff;font-size:2rem;line-height:.95;margin:2px 0 2px;text-align:center}
+  #login .l2 em{font-style:normal;color:var(--rojo)}
+  #login .tag{font-family:'Oswald',sans-serif;color:rgba(255,255,255,.6);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:22px}
+  .login-card{width:100%;max-width:360px;background:var(--crema-card);border:2px solid var(--marron-osc);border-radius:20px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .login-card h1{font-family:'Anton',sans-serif;font-size:1.3rem;color:var(--carbon);margin-bottom:2px}
+  .login-card p{font-size:.82rem;color:var(--gris);margin-bottom:14px}
+  .field label{display:block;font-family:'Oswald',sans-serif;font-weight:500;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--marron-osc);margin:12px 0 5px}
+  .field input{width:100%;padding:13px 14px;border:2px solid var(--marron-osc);border-radius:12px;font-family:'Outfit',sans-serif;font-size:1rem;background:#fff;color:var(--texto)}
+  .field input:focus{outline:none;border-color:var(--rojo);box-shadow:0 0 0 3px rgba(192,57,43,.15)}
+  .btn-primary{width:100%;margin-top:18px;background:var(--rojo);color:#fff;border:none;font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:1rem;padding:14px;border-radius:12px;cursor:pointer;box-shadow:0 4px 0 var(--rojo-osc);transition:transform .12s ease}
+  .btn-primary:active{transform:translateY(2px);box-shadow:0 2px 0 var(--rojo-osc)}
+  .btn-primary:disabled{opacity:.6;cursor:default}
+  .login-msg{margin-top:12px;font-size:.85rem;color:var(--rojo);min-height:1em;text-align:center}
+
+  /* ---------- SHELL PANEL ---------- */
+  #panel{display:none;min-height:100dvh;padding-bottom:calc(74px + var(--safe-b))}
+  header.top{position:sticky;top:0;z-index:30;background:var(--amarillo);border-bottom:3px solid var(--marron-osc);box-shadow:0 4px 14px rgba(58,30,16,.18)}
+  .top-inner{max-width:760px;margin:0 auto;padding:11px 16px;display:flex;align-items:center;gap:11px}
+  .top .mark{width:40px;height:40px;flex:0 0 auto}
+  .top-txt{flex:1 1 auto;min-width:0}
+  .top-txt h1{font-family:'Anton',sans-serif;font-size:1.18rem;line-height:.95;color:var(--rojo-osc)}
+  .top-txt h1 b{color:var(--carbon);font-weight:400}
+  .top-txt p{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.12em;font-size:.55rem;color:var(--marron-osc);margin-top:2px}
+  .logout{flex:0 0 auto;background:var(--carbon);color:var(--amarillo-claro);border:none;font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.04em;font-size:.72rem;padding:9px 13px;border-radius:30px;cursor:pointer;display:flex;align-items:center;gap:6px}
+  .logout svg{width:15px;height:15px}
+
+  main{max-width:760px;margin:0 auto;padding:16px 16px 24px}
+  .view-title{font-family:'Anton',sans-serif;font-size:1.5rem;color:var(--carbon);margin-bottom:2px}
+  .view-sub{font-size:.82rem;color:var(--gris);margin-bottom:14px}
+  .loading{text-align:center;color:var(--gris);font-family:'Oswald',sans-serif;padding:34px 10px}
+  .empty{text-align:center;color:var(--gris);background:var(--crema-card);border:2px dashed var(--marron-osc);border-radius:16px;padding:28px 16px;font-size:.92rem}
+
+  .card{background:var(--crema-card);border:2px solid var(--marron-osc);border-radius:16px;box-shadow:0 4px 0 rgba(58,30,16,.08);margin-bottom:12px;overflow:hidden}
+
+  /* productos */
+  .cat-h{font-family:'Anton',sans-serif;font-size:1.05rem;color:var(--marron-osc);text-transform:uppercase;margin:18px 0 8px;letter-spacing:.02em}
+  .cat-h:first-child{margin-top:0}
+  .prod{display:flex;align-items:center;gap:12px;padding:11px 13px}
+  .prod+.prod{border-top:1px dashed rgba(107,58,30,.2)}
+  .pthumb{flex:0 0 auto;width:50px;height:50px;border-radius:11px;overflow:hidden;background:var(--amarillo-suave);border:1px solid rgba(107,58,30,.18);display:flex;align-items:center;justify-content:center}
+  .pthumb svg{width:24px;height:24px;color:var(--marron)}
+  .pthumb img{width:100%;height:100%;object-fit:cover}
+  .pmain{flex:1 1 auto;min-width:0}
+  .pname{font-family:'Oswald',sans-serif;font-weight:500;font-size:1.02rem;line-height:1.15}
+  .pprice{font-family:'Anton',sans-serif;color:var(--rojo);font-size:1rem;margin-top:1px}
+  .pprice.soft{color:var(--gris);font-family:'Oswald',sans-serif;font-weight:500;font-size:.82rem}
+  .badge{flex:0 0 auto;font-family:'Oswald',sans-serif;font-weight:600;font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;padding:4px 9px;border-radius:30px;white-space:nowrap}
+  .badge.on{background:#e6f6ec;color:#157a3c;border:1px solid #9fd9b4}
+  .badge.off{background:#f1eadf;color:var(--gris);border:1px solid #d8ccb8}
+
+  /* pedidos */
+  .ped-head{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--amarillo-suave);padding:10px 14px;border-bottom:2px solid var(--marron-osc)}
+  .ped-cod{font-family:'Anton',sans-serif;font-size:1.15rem;color:var(--carbon)}
+  .est{font-family:'Oswald',sans-serif;font-weight:600;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;padding:5px 11px;border-radius:30px;white-space:nowrap}
+  .ped-body{padding:12px 14px}
+  .ped-row{display:flex;gap:8px;font-size:.86rem;margin-bottom:5px;color:var(--texto)}
+  .ped-row .k{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:.64rem;letter-spacing:.06em;color:var(--marron-osc);flex:0 0 78px;padding-top:2px}
+  .ped-items{margin-top:8px;border-top:1px dashed rgba(107,58,30,.22);padding-top:8px}
+  .ped-it{display:flex;justify-content:space-between;font-size:.85rem;padding:2px 0}
+  .ped-it .nm{color:var(--texto)}
+  .ped-it .sp{font-family:'Oswald',sans-serif;font-weight:600;color:var(--rojo)}
+  .ped-tot{display:flex;justify-content:space-between;align-items:baseline;margin-top:9px;padding-top:9px;border-top:2px solid rgba(107,58,30,.18)}
+  .ped-tot span{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:.7rem;letter-spacing:.06em;color:var(--marron-osc)}
+  .ped-tot b{font-family:'Anton',sans-serif;font-size:1.3rem;color:var(--carbon)}
+
+  /* clientes */
+  .cli{display:flex;align-items:center;gap:12px;padding:13px 14px}
+  .cli-av{flex:0 0 auto;width:44px;height:44px;border-radius:50%;background:var(--carbon);color:var(--amarillo-claro);display:flex;align-items:center;justify-content:center;font-family:'Anton',sans-serif;font-size:1.05rem}
+  .cli-main{flex:1 1 auto;min-width:0}
+  .cli-name{font-family:'Oswald',sans-serif;font-weight:600;font-size:1.02rem}
+  .cli-cel{font-size:.82rem;color:var(--gris)}
+  .cli-stats{flex:0 0 auto;text-align:right}
+  .cli-stats .g{font-family:'Anton',sans-serif;color:var(--rojo);font-size:1.05rem}
+  .cli-stats .n{font-family:'Oswald',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:var(--marron-osc)}
+
+  /* nav inferior */
+  nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--carbon);display:flex;padding-bottom:var(--safe-b);box-shadow:0 -6px 20px rgba(0,0,0,.3)}
+  nav.tabs button{flex:1 1 0;background:none;border:none;color:rgba(255,255,255,.6);font-family:'Oswald',sans-serif;font-weight:600;font-size:.66rem;text-transform:uppercase;letter-spacing:.04em;padding:11px 4px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+  nav.tabs button svg{width:22px;height:22px}
+  nav.tabs button.active{color:var(--amarillo-claro)}
+  .demo-note{background:#fff7e0;border:1px solid var(--amarillo);border-radius:12px;padding:9px 12px;font-size:.76rem;color:var(--marron-osc);margin-bottom:14px;font-family:'Oswald',sans-serif}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="login">
+  <svg class="mark" viewBox="0 0 60 60" aria-hidden="true">
+    <ellipse cx="30" cy="22" rx="20" ry="6" fill="#fff"/>
+    <path d="M11 22 C11 38 18 46 30 46 C42 46 49 38 49 22 Z" fill="#fff"/>
+    <path d="M16 48 l28 0" stroke="#6B3A1E" stroke-width="4" stroke-linecap="round"/>
+    <path d="M20 50 l20 0" stroke="#6B3A1E" stroke-width="4" stroke-linecap="round" transform="rotate(10 30 50)"/>
+    <path d="M24 38 q4 -8 0 -14 q6 6 3 14 q5 -3 4 -10 q4 7 -1 12 Z" fill="#C0392B"/>
+  </svg>
+  <div class="l1">El Fogón de</div>
+  <div class="l2">LA <em>PESA</em></div>
+  <div class="tag">Panel de administración</div>
+  <div class="login-card">
+    <h1>Iniciar sesión</h1>
+    <p>Acceso solo para el equipo.</p>
+    <form id="login-form">
+      <div class="field">
+        <label for="email">Correo</label>
+        <input id="email" type="email" autocomplete="username" inputmode="email" placeholder="correo@elfogondelapesa.com" required>
+      </div>
+      <div class="field">
+        <label for="pass">Contraseña</label>
+        <input id="pass" type="password" autocomplete="current-password" placeholder="Tu contraseña" required>
+      </div>
+      <button class="btn-primary" id="login-btn" type="submit">Entrar</button>
+      <div class="login-msg" id="login-msg"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== PANEL ===== -->
+<div id="panel">
+  <header class="top">
+    <div class="top-inner">
+      <svg class="mark" viewBox="0 0 60 60" aria-hidden="true">
+        <ellipse cx="30" cy="22" rx="20" ry="6" fill="#fff"/>
+        <path d="M11 22 C11 38 18 46 30 46 C42 46 49 38 49 22 Z" fill="#fff"/>
+        <path d="M16 48 l28 0" stroke="#6B3A1E" stroke-width="4" stroke-linecap="round"/>
+        <path d="M20 50 l20 0" stroke="#6B3A1E" stroke-width="4" stroke-linecap="round" transform="rotate(10 30 50)"/>
+        <path d="M24 38 q4 -8 0 -14 q6 6 3 14 q5 -3 4 -10 q4 7 -1 12 Z" fill="#C0392B"/>
+      </svg>
+      <div class="top-txt"><h1>EL FOGÓN DE <b>LA PESA</b></h1><p id="quien">Panel</p></div>
+      <button class="logout" type="button" onclick="salir()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+        Salir
+      </button>
+    </div>
+  </header>
+
+  <main id="view"></main>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="productos" class="active" onclick="irA('productos')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18M3 9l1.5-4.5A2 2 0 0 1 6.4 3h11.2a2 2 0 0 1 1.9 1.5L21 9M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/></svg>
+      Productos
+    </button>
+    <button data-tab="pedidos" onclick="irA('pedidos')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+      Pedidos
+    </button>
+    <button data-tab="clientes" onclick="irA('clientes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13A4 4 0 0 1 16 11"/></svg>
+      Clientes
+    </button>
+  </nav>
+</div>
+
+<script type="module" src="../supabase.js"></script>
+<script>
+  // ====== util ======
+  function whenReady(cb){ if(window.supabaseClient){ cb(); } else { setTimeout(()=>whenReady(cb), 30); } }
+  function fmt(n){ return '$'+(Number(n)||0).toLocaleString('es-CO'); }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function iniciales(nombre){ const p=(nombre||'?').trim().split(/\s+/); return ((p[0]||'?')[0]+(p[1]?p[1][0]:'')).toUpperCase(); }
+  function codigo(id){ return '#'+String(id).slice(-4).toUpperCase(); }
+  function fecha(s){ try{ const d=new Date(s); return d.toLocaleDateString('es-CO',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+  const ESTADOS = {
+    por_confirmar:{t:'Por confirmar',bg:'#FCE9A8',fg:'#7a5a00'},
+    confirmado:{t:'Confirmado',bg:'#dbeafe',fg:'#1e40af'},
+    en_proceso:{t:'En proceso',bg:'#ffe4c4',fg:'#9a4a00'},
+    listo:{t:'Listo',bg:'#e9e0ff',fg:'#5b21b6'},
+    enviado:{t:'Enviado',bg:'#cdeefb',fg:'#0369a1'},
+    cobrado:{t:'Cobrado',bg:'#e6f6ec',fg:'#157a3c'},
+    cancelado:{t:'Cancelado',bg:'#f1eadf',fg:'#7A6A57'}
+  };
+  let SB = null;
+
+  // ====== AUTH ======
+  const $ = id => document.getElementById(id);
+  function mostrarLogin(){ $('login').style.display='flex'; $('panel').style.display='none'; }
+  function mostrarPanel(){ $('login').style.display='none'; $('panel').style.display='block'; }
+
+  async function validarStaff(){
+    const { data, error } = await SB.rpc('rol_actual');
+    if(error) return null;
+    return data; // 'admin' | null
+  }
+
+  async function bootstrap(){
+    SB = window.supabaseClient;
+    $('login-form').addEventListener('submit', onLogin);
+    const { data:{ session } } = await SB.auth.getSession();
+    if(session){
+      const rol = await validarStaff();
+      if(rol){ entrar(rol); return; }
+      await SB.auth.signOut();
+    }
+    mostrarLogin();
+  }
+
+  async function onLogin(e){
+    e.preventDefault();
+    const btn = $('login-btn'), msg = $('login-msg');
+    msg.textContent=''; btn.disabled=true; btn.textContent='Entrando…';
+    const email = $('email').value.trim();
+    const password = $('pass').value;
+    try{
+      const { error } = await SB.auth.signInWithPassword({ email, password });
+      if(error){ msg.textContent = 'Correo o contraseña incorrectos.'; return; }
+      const rol = await validarStaff();
+      if(!rol){ await SB.auth.signOut(); msg.textContent = 'Esta cuenta no tiene acceso al panel.'; return; }
+      entrar(rol);
+    }catch(err){
+      msg.textContent = 'No se pudo conectar. Intenta de nuevo.';
+    }finally{
+      btn.disabled=false; btn.textContent='Entrar';
+    }
+  }
+
+  async function salir(){ await SB.auth.signOut(); $('email').value=''; $('pass').value=''; mostrarLogin(); }
+
+  function entrar(rol){
+    $('quien').textContent = rol==='admin' ? 'Administradora' : ('Equipo · '+rol);
+    mostrarPanel();
+    irA('productos');
+  }
+
+  // ====== NAV ======
+  let TAB='productos';
+  function irA(tab){
+    TAB=tab;
+    document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+    if(tab==='productos') cargarProductos();
+    else if(tab==='pedidos') cargarPedidos();
+    else cargarClientes();
+  }
+  function setView(html){ $('view').innerHTML = html; }
+  function cargando(t){ setView('<div class="loading">Cargando '+t+'…</div>'); }
+
+  // ====== PRODUCTOS ======
+  async function cargarProductos(){
+    cargando('productos');
+    const { data, error } = await SB.from('productos')
+      .select('id,nombre,precio,img_url,visible,orden, categorias(nombre,sub,orden)');
+    if(error){ setView('<div class="empty">No se pudo cargar.</div>'); return; }
+    const rows = (data||[]).slice().sort((a,b)=>{
+      const ca=(a.categorias&&a.categorias.orden)||0, cb=(b.categorias&&b.categorias.orden)||0;
+      return ca-cb || (a.orden||0)-(b.orden||0);
+    });
+    let html = '<h2 class="view-title">Productos</h2><p class="view-sub">'+rows.length+' productos · solo lectura</p>';
+    let lastCat = null;
+    rows.forEach((p,i)=>{
+      const c = p.categorias || {};
+      const catLabel = (c.nombre||'') + (c.sub?(' '+c.sub):'');
+      if(catLabel!==lastCat){
+        if(lastCat!==null) html += '</div>';
+        html += '<div class="cat-h">'+esc(catLabel)+'</div><div class="card">';
+        lastCat = catLabel;
+      }
+      const precio = p.precio>0 ? '<div class="pprice">'+fmt(p.precio)+'</div>' : '<div class="pprice soft">Valor en el local</div>';
+      const thumb = p.img_url
+        ? '<div class="pthumb"><img src="'+esc(p.img_url)+'" alt="'+esc(p.nombre)+'" loading="lazy"></div>'
+        : '<div class="pthumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9h18M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M3 9l1.5-4.5A2 2 0 0 1 6.4 3h11.2a2 2 0 0 1 1.9 1.5L21 9"/></svg></div>';
+      const badge = p.visible ? '<span class="badge on">Visible</span>' : '<span class="badge off">Oculto</span>';
+      html += '<div class="prod">'+thumb+'<div class="pmain"><div class="pname">'+esc(p.nombre)+'</div>'+precio+'</div>'+badge+'</div>';
+    });
+    if(lastCat!==null) html += '</div>';
+    if(rows.length===0) html += '<div class="empty">Aún no hay productos.</div>';
+    setView(html);
+  }
+
+  // ====== PEDIDOS ======
+  async function cargarPedidos(){
+    cargando('pedidos');
+    const { data, error } = await SB.from('pedidos')
+      .select('id,estado,total,direccion,created_at, clientes(nombre,celular), comandas(estado, comanda_items(nombre_snap,precio_snap,qty,subtotal))')
+      .eq('tipo','domicilio')
+      .order('created_at',{ascending:false});
+    if(error){ setView('<div class="empty">No se pudo cargar.</div>'); return; }
+    const peds = data||[];
+    let html = '<h2 class="view-title">Pedidos a domicilio</h2><p class="view-sub">'+peds.length+' pedidos · solo lectura</p>';
+    if(peds.length===0){ setView(html+'<div class="empty">Aún no hay pedidos.</div>'); return; }
+    peds.forEach(p=>{
+      const e = ESTADOS[p.estado] || {t:p.estado,bg:'#eee',fg:'#555'};
+      const cli = p.clientes || {};
+      const items = (p.comandas||[]).flatMap(cm=>cm.comanda_items||[]);
+      let itemsHtml='';
+      items.forEach(it=>{
+        const sp = it.precio_snap>0 ? fmt(it.subtotal) : 'En el local';
+        itemsHtml += '<div class="ped-it"><span class="nm">'+it.qty+'× '+esc(it.nombre_snap)+'</span><span class="sp">'+sp+'</span></div>';
+      });
+      html += '<div class="card">'+
+        '<div class="ped-head"><span class="ped-cod">'+codigo(p.id)+'</span>'+
+          '<span class="est" style="background:'+e.bg+';color:'+e.fg+'">'+esc(e.t)+'</span></div>'+
+        '<div class="ped-body">'+
+          '<div class="ped-row"><span class="k">Cliente</span><span>'+esc(cli.nombre||'—')+(cli.celular?(' · '+esc(cli.celular)):'')+'</span></div>'+
+          (p.direccion?'<div class="ped-row"><span class="k">Dirección</span><span>'+esc(p.direccion)+'</span></div>':'')+
+          '<div class="ped-row"><span class="k">Fecha</span><span>'+fecha(p.created_at)+'</span></div>'+
+          '<div class="ped-items">'+(itemsHtml||'<div class="ped-it"><span class="nm">Sin ítems</span></div>')+'</div>'+
+          '<div class="ped-tot"><span>Total</span><b>'+fmt(p.total)+'</b></div>'+
+        '</div>'+
+      '</div>';
+    });
+    setView(html);
+  }
+
+  // ====== CLIENTES (CRM) ======
+  async function cargarClientes(){
+    cargando('clientes');
+    const [{ data:cls, error:e1 }, { data:peds, error:e2 }] = await Promise.all([
+      SB.from('clientes').select('id,nombre,celular,created_at'),
+      SB.from('pedidos').select('cliente_id,estado,total')
+    ]);
+    if(e1||e2){ setView('<div class="empty">No se pudo cargar.</div>'); return; }
+    const porCliente = {};
+    (peds||[]).forEach(p=>{
+      if(!p.cliente_id) return;
+      const a = porCliente[p.cliente_id] || (porCliente[p.cliente_id]={n:0,g:0});
+      a.n++; if(p.estado==='cobrado') a.g += (p.total||0);
+    });
+    const rows = (cls||[]).slice().sort((a,b)=>{
+      const ga=(porCliente[a.id]||{}).g||0, gb=(porCliente[b.id]||{}).g||0;
+      return gb-ga;
+    });
+    let html = '<h2 class="view-title">Clientes</h2><p class="view-sub">'+rows.length+' clientes · gasto de pedidos cobrados</p>';
+    if(rows.length===0){ setView(html+'<div class="empty">Aún no hay clientes.</div>'); return; }
+    html += '<div class="card">';
+    rows.forEach((c,i)=>{
+      const a = porCliente[c.id] || {n:0,g:0};
+      html += (i>0?'<div style="border-top:1px dashed rgba(107,58,30,.2)"></div>':'')+
+        '<div class="cli"><div class="cli-av">'+esc(iniciales(c.nombre||c.celular))+'</div>'+
+        '<div class="cli-main"><div class="cli-name">'+esc(c.nombre||'Sin nombre')+'</div><div class="cli-cel">'+esc(c.celular||'')+'</div></div>'+
+        '<div class="cli-stats"><div class="g">'+fmt(a.g)+'</div><div class="n">'+a.n+(a.n===1?' pedido':' pedidos')+'</div></div></div>';
+    });
+    html += '</div>';
+    setView(html);
+  }
+
+  // ====== INICIO ======
+  whenReady(bootstrap);
+</script>
+</body>
+</html>
