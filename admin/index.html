@@ -125,6 +125,16 @@
   .v-row .vq{flex:0 0 auto;font-family:'Anton',sans-serif;color:var(--rojo);font-size:1.05rem;min-width:40px}
   .v-row .vnm{flex:1 1 auto;font-family:'Oswald',sans-serif;font-weight:500}
   .v-row .vm{font-family:'Anton',sans-serif;color:var(--carbon)}
+  .fecha-bar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .fecha-bar input[type=date]{flex:1 1 150px;min-width:140px;padding:11px 12px;border:2px solid var(--marron-osc);border-radius:12px;font-family:'Outfit',sans-serif;font-size:1rem;background:#fff;color:var(--texto)}
+  .fecha-bar input[type=date]:focus{outline:none;border-color:var(--rojo);box-shadow:0 0 0 3px rgba(192,57,43,.15)}
+  .vchip{flex:0 0 auto;font-family:'Oswald',sans-serif;font-weight:600;font-size:.78rem;text-transform:uppercase;color:var(--marron-osc);background:var(--crema-card);border:2px solid var(--marron-osc);padding:9px 13px;border-radius:30px;cursor:pointer}
+  .vchip.on{background:var(--carbon);color:var(--amarillo-claro);border-color:var(--carbon)}
+  .v-sum{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .vsum{background:var(--crema-card);border:2px solid var(--marron-osc);border-radius:14px;padding:12px 6px;text-align:center}
+  .vsum .t{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:.6rem;letter-spacing:.03em;color:var(--marron-osc)}
+  .vsum .v{font-family:'Anton',sans-serif;font-size:1.05rem;color:var(--rojo);line-height:1.05;margin-top:3px;word-break:break-all}
+  .vsum .n{font-size:.6rem;color:var(--gris);margin-top:2px}
   /* carnet VIP (en clientes) */
   .cli.tap{cursor:pointer}
   .vip-boxes{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:10px 0}
@@ -830,30 +840,53 @@
     catch(e){ $('car-msg').textContent='No se pudo: '+(e.message||e); }
   }
 
-  // ====== VENTAS DEL DÍA ======
-  function inicioHoyISO(){ const d=new Date(); d.setHours(0,0,0,0); return d.toISOString(); }
-  async function cargarVentas(){
+  // ====== VENTAS (por fecha + resumen semana/mes/año) ======
+  function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function parseYmd(s){ const a=s.split('-').map(Number); return new Date(a[0], a[1]-1, a[2]); }
+  function lunesDe(d){ const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); const dow=(x.getDay()+6)%7; x.setDate(x.getDate()-dow); return x; }
+  let VENTAS_FECHA=null;
+  async function cargarVentas(fechaStr){
     cargando('ventas');
+    const sel = fechaStr ? parseYmd(fechaStr) : new Date();
+    VENTAS_FECHA = ymd(sel);
+    const y=sel.getFullYear(), mo=sel.getMonth(), da=sel.getDate();
     const { data, error } = await SB.from('pedidos')
       .select('id,tipo,total,medio_pago,cerrado_at, comandas(comanda_items(nombre_snap,qty,subtotal,precio_snap))')
-      .not('cerrado_at','is',null).gte('cerrado_at', inicioHoyISO());
+      .not('cerrado_at','is',null)
+      .gte('cerrado_at', new Date(y,0,1).toISOString()).lt('cerrado_at', new Date(y+1,0,1).toISOString());
     if(error){ setView('<div class="empty">No se pudo cargar.</div>'); return; }
-    const ventas=data||[];
-    let total=0; const prod={}; let porMedio={};
-    ventas.forEach(p=>{ total+=(p.total||0); if(p.medio_pago) porMedio[p.medio_pago]=(porMedio[p.medio_pago]||0)+(p.total||0);
-      (p.comandas||[]).flatMap(c=>c.comanda_items||[]).forEach(it=>{ const k=it.nombre_snap||'—'; const a=prod[k]||(prod[k]={q:0,m:0}); a.q+=(it.qty||0); a.m+=(it.subtotal||0); });
-    });
-    const hoy=new Date().toLocaleDateString('es-CO',{weekday:'long',day:'2-digit',month:'long'});
-    let html='<div class="view-head"><div><div class="view-title">Ventas de hoy</div><div class="view-sub">'+hoy+'</div></div></div>';
-    html+='<div class="v-big"><div class="vn">Total vendido hoy</div><div class="vv">'+fmt(total)+'</div><div class="vs">'+ventas.length+(ventas.length===1?' venta cerrada':' ventas cerradas')+'</div></div>';
+    const all=data||[];
+    const enRango=(p,a,b)=>{ const t=new Date(p.cerrado_at); return t>=a && t<b; };
+    const dS=new Date(y,mo,da), dE=new Date(y,mo,da+1);
+    const wS=lunesDe(sel), wE=new Date(wS.getFullYear(),wS.getMonth(),wS.getDate()+7);
+    const mS=new Date(y,mo,1), mE=new Date(y,mo+1,1);
+    const dia=all.filter(p=>enRango(p,dS,dE)), semana=all.filter(p=>enRango(p,wS,wE)), mes=all.filter(p=>enRango(p,mS,mE));
+    const suma=arr=>arr.reduce((s,p)=>s+(p.total||0),0);
+
+    let total=0; const prod={}, porMedio={};
+    dia.forEach(p=>{ total+=(p.total||0); if(p.medio_pago) porMedio[p.medio_pago]=(porMedio[p.medio_pago]||0)+(p.total||0);
+      (p.comandas||[]).flatMap(c=>c.comanda_items||[]).forEach(it=>{ const k=it.nombre_snap||'—'; const a=prod[k]||(prod[k]={q:0,m:0}); a.q+=(it.qty||0); a.m+=(it.subtotal||0); }); });
+
+    const hoyStr=ymd(new Date());
+    const fLabel=sel.toLocaleDateString('es-CO',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+    let html='<div class="view-head"><div><div class="view-title">Ventas</div><div class="view-sub">Elige el día que quieras ver</div></div></div>';
+    html+='<div class="fecha-bar"><input type="date" id="vfecha" value="'+VENTAS_FECHA+'" max="'+hoyStr+'">'+
+      '<button class="vchip'+(VENTAS_FECHA===hoyStr?' on':'')+'" type="button" onclick="cargarVentas(null)">Hoy</button>'+
+      '<button class="vchip" type="button" onclick="ventasAyer()">Ayer</button></div>';
+    html+='<div class="v-big"><div class="vn">'+esc(fLabel)+'</div><div class="vv">'+fmt(total)+'</div><div class="vs">'+dia.length+(dia.length===1?' venta cerrada':' ventas cerradas')+'</div></div>';
     const medios=Object.keys(porMedio);
-    if(medios.length){ html+='<div class="card">'+medios.map(m=>'<div class="v-row"><span class="vnm">'+esc(MEDIOS[m]||m)+'</span><span class="vm">'+fmt(porMedio[m])+'</span></div>').join('')+'</div>'; }
+    if(medios.length) html+='<div class="card">'+medios.map(m=>'<div class="v-row"><span class="vnm">'+esc(MEDIOS[m]||m)+'</span><span class="vm">'+fmt(porMedio[m])+'</span></div>').join('')+'</div>';
     const lista=Object.keys(prod).map(k=>({n:k, ...prod[k]})).sort((a,b)=>b.m-a.m);
     html+='<div class="cat-h" style="margin-top:16px">Por producto</div>';
-    if(lista.length===0) html+='<div class="empty">Aún no hay ventas cerradas hoy.</div>';
-    else html+='<div class="card">'+lista.map(x=>'<div class="v-row"><span class="vq">'+x.q+'×</span><span class="vnm">'+esc(x.n)+'</span><span class="vm">'+fmt(x.m)+'</span></div>').join('')+'</div>';
+    html+= lista.length ? '<div class="card">'+lista.map(x=>'<div class="v-row"><span class="vq">'+x.q+'×</span><span class="vnm">'+esc(x.n)+'</span><span class="vm">'+fmt(x.m)+'</span></div>').join('')+'</div>' : '<div class="empty">No hubo ventas ese día.</div>';
+    html+='<div class="cat-h" style="margin-top:18px">Resumen</div><div class="v-sum">'+
+      '<div class="vsum"><div class="t">Semana</div><div class="v">'+fmt(suma(semana))+'</div><div class="n">'+semana.length+' ventas</div></div>'+
+      '<div class="vsum"><div class="t">'+esc(sel.toLocaleDateString('es-CO',{month:'long'}))+'</div><div class="v">'+fmt(suma(mes))+'</div><div class="n">'+mes.length+' ventas</div></div>'+
+      '<div class="vsum"><div class="t">Año '+y+'</div><div class="v">'+fmt(suma(all))+'</div><div class="n">'+all.length+' ventas</div></div></div>';
     setView(html);
+    const inp=$('vfecha'); if(inp) inp.addEventListener('change', e=>{ if(e.target.value) cargarVentas(e.target.value); });
   }
+  function ventasAyer(){ const d=new Date(); d.setDate(d.getDate()-1); cargarVentas(ymd(d)); }
 
   whenReady(bootstrap);
 </script>
