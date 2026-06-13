@@ -188,6 +188,28 @@
   .mini-ctrl button{width:38px;height:38px;border:none;background:var(--amarillo);color:var(--carbon);font-family:'Anton',sans-serif;font-size:1.15rem;cursor:pointer}
   .mini-ctrl .qv{min-width:26px;text-align:center;font-family:'Oswald',sans-serif;font-weight:600}
 
+  /* ---- saludo a cliente reconocido ---- */
+  .saludo{display:none;margin:12px auto 0;max-width:440px;text-align:center;font-family:'Oswald',sans-serif;font-weight:600;color:var(--rojo);font-size:.98rem}
+  .saludo.show{display:block}
+
+  /* ---- estados de carga / error del menú dinámico ---- */
+  .menu-state{padding:24px 4px 6px}
+  .skel{display:flex;flex-direction:column;gap:16px}
+  .skbar{height:70px;border-radius:20px;background:linear-gradient(90deg,#efe4c8 25%,#f7efd9 37%,#efe4c8 63%);background-size:400% 100%;animation:sk 1.4s ease infinite}
+  @keyframes sk{0%{background-position:100% 0}100%{background-position:-100% 0}}
+  .menu-error{text-align:center;background:var(--crema-card);border:2px solid var(--marron-osc);border-radius:20px;padding:26px 18px}
+  .menu-error p{font-family:'Oswald',sans-serif;color:var(--marron-osc);font-size:1rem;margin-bottom:14px}
+  .menu-error button{background:var(--rojo);color:#fff;border:none;font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:.95rem;padding:13px 24px;border-radius:12px;cursor:pointer;box-shadow:0 4px 0 var(--rojo-osc)}
+  .menu-error button:active{transform:translateY(2px);box-shadow:0 2px 0 var(--rojo-osc)}
+
+  /* ---- modo QR (solo lectura: sin pedir) ---- */
+  .qr-note{display:none}
+  body.qr{padding-bottom:24px}
+  body.qr .qty-ctrl,body.qr #cartbar,body.qr #sheet,body.qr #sheet-bd{display:none !important}
+  body.qr .hero .sub{display:none}
+  body.qr .qr-note{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px auto 0;max-width:460px;background:var(--carbon);color:var(--amarillo-claro);border-radius:14px;padding:14px 16px;font-family:'Oswald',sans-serif;letter-spacing:.02em;font-size:1rem;text-align:center}
+  body.qr .qr-note svg{width:22px;height:22px;flex:0 0 auto;color:var(--amarillo)}
+
   @media(min-width:560px){.hero h2{font-size:3.6rem}.intro-name .l2{font-size:3.4rem}}
   @media (prefers-reduced-motion:reduce){.flame,.steam span,.ember,.fogon,.intro-name,.intro-badge,.skip{animation:none}#intro,.cartbar,.sheet,.sheet-bd{transition:none}}
 </style>
@@ -243,9 +265,16 @@
     <div class="eyebrow">Nuestra carta</div>
     <h2>Menú</h2>
     <p class="sub">Toca <b>+</b> para armar tu pedido. Al final lo envías por WhatsApp y nosotros lo preparamos.</p>
+    <p class="saludo" id="saludo"></p>
   </div>
 
-  <!-- El menú se genera aquí -->
+  <!-- Nota visible solo en modo QR (?modo=qr) -->
+  <div class="qr-note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>
+    <span>Haz tu pedido con tu mesera</span>
+  </div>
+
+  <!-- El menú se genera aquí (dinámico desde Supabase) -->
   <div id="menu"></div>
 
   <div class="takeaway">
@@ -309,6 +338,8 @@
       </select>
       <label for="cli-nombre">Nombre</label>
       <input id="cli-nombre" type="text" autocomplete="name" placeholder="Tu nombre">
+      <label for="cli-celular">Celular <span id="cel-req" style="color:var(--rojo)">·  requerido para domicilio</span></label>
+      <input id="cli-celular" type="tel" inputmode="numeric" autocomplete="tel" placeholder="Ej: 300 123 4567">
       <div id="dir-wrap">
         <label for="cli-dir" id="dir-label">Dirección de entrega</label>
         <input id="cli-dir" type="text" autocomplete="street-address" placeholder="Ej: Calle 5 #10-20, barrio Atalaya">
@@ -326,52 +357,58 @@
 </div>
 
 <script>
-  // ====== DATOS DEL MENÚ ======
-  // Estructura lista para fase 2: agrega "img" y "desc" a cualquier ítem y la página los muestra automáticamente.
-  const MENU = [
-    { cat:'Caldos', id:'caldos', tag:'$15.000', items:[
-      {id:'c_venas', name:'Venas', price:15000},
-      {id:'c_pichon', name:'Pichón', price:15000},
-      {id:'c_vigoroso', name:'Vigoroso', price:15000},
-      {id:'c_costilla', name:'Costilla', price:15000},
-      {id:'c_lagarto', name:'Lagarto', price:15000},
-    ]},
-    { cat:'Medio caldo', id:'medio', tag:'$10.000', items:[
-      {id:'m_venas', name:'Venas', price:10000},
-      {id:'m_pichon', name:'Pichón', price:10000},
-      {id:'m_vigoroso', name:'Vigoroso', price:10000},
-      {id:'m_lagarto', name:'Lagarto', price:10000},
-    ]},
-    { cat:'Bandeja', id:'b250', sub:'250 gr', items:[
-      {id:'b250_carne', name:'Carne', price:34000},
-      {id:'b250_pechuga', name:'Pechuga', price:32000},
-      {id:'b250_lomo', name:'Lomo', price:32000},
-      {id:'b250_lengua', name:'Lengua', price:32000},
-      {id:'b250_chunchullo', name:'Chunchullo', price:32000},
-      {id:'b250_sobrebarriga', name:'Sobre barriga', price:32000},
-      {id:'b250_mixta', name:'Mixta 2 carnes', price:35000},
-      {id:'b250_tres', name:'Bandeja 3 carnes', price:38000},
-    ]},
-    { cat:'Bandeja', id:'b150', sub:'150 gr', items:[
-      {id:'b150_carne', name:'Carne', price:22000},
-      {id:'b150_pechuga', name:'Pechuga', price:22000},
-      {id:'b150_lomo', name:'Lomo', price:22000},
-      {id:'b150_chunchullo', name:'Chunchullo', price:22000},
-      {id:'b150_lengua', name:'Lengua', price:22000},
-      {id:'b150_sobrebarriga', name:'Sobre barriga', price:22000},
-      {id:'b150_mixta', name:'Mixta 2 carnes', price:24000},
-    ]},
-    { cat:'Especiales', id:'especiales', items:[
-      {id:'picada', name:'Picada', desc:'Ideal para 3 a 4 personas', price:44000},
-    ]},
-    { cat:'Bebidas', id:'bebidas', items:[
-      {id:'beb_gaseosa', name:'Gaseosa', price:0},
-      {id:'beb_agua', name:'Agua', price:0},
-      {id:'beb_limonada', name:'Limonada', price:0},
-    ]},
-  ];
-  // nombre que viaja en el pedido de WhatsApp (con prefijo de categoría)
-  const PREFIJO = {caldos:'Caldo', medio:'Medio caldo', b250:'Bandeja 250gr', b150:'Bandeja 150gr', especiales:'', bebidas:''};
+  // ====== MENÚ DINÁMICO (Supabase) ======
+  const ES_QR = new URLSearchParams(location.search).get('modo') === 'qr';
+  const MENU_CACHE = 'fogon_menu_v1';
+  let MENU = [];   // se llena desde la BD (o desde caché)
+
+  // Prefijo del nombre que viaja por WhatsApp, idéntico a como se veía hoy:
+  // "Caldo Venas", "Medio caldo Venas", "Bandeja 250gr Carne", "Bandeja 150gr Carne",
+  // "Picada", "Gaseosa" (Especiales y Bebidas sin prefijo).
+  function prefijoCategoria(group){
+    const key = group.sub ? group.cat + '|' + group.sub : group.cat;
+    const MAP = {
+      'Caldos': 'Caldo',
+      'Medio caldo': 'Medio caldo',
+      'Bandeja|250 gr': 'Bandeja 250gr',
+      'Bandeja|150 gr': 'Bandeja 150gr',
+      'Especiales': '',
+      'Bebidas': '',
+    };
+    if (key in MAP) return MAP[key];
+    return group.cat + (group.sub ? ' ' + group.sub.replace(/\s+/g,'') : ''); // fallback futuro
+  }
+
+  // Convierte filas de la BD al mismo shape que ya usaba el render.
+  function agruparMenu(cats, prods){
+    return cats.map(c => {
+      const items = prods.filter(p => p.categoria_id === c.id)
+        .sort((a,b)=>a.orden-b.orden)
+        .map(p => ({ id:p.id, name:p.nombre, price:p.precio, desc:p.descripcion||undefined, img:p.img_url||undefined }));
+      // tag de categoría: solo si todos los ítems comparten un mismo precio > 0 (reproduce Caldos $15.000 / Medio caldo $10.000)
+      const precios = items.map(i=>i.price);
+      const tag = (items.length>1 && precios.every(x=>x===precios[0]) && precios[0]>0) ? fmt(precios[0]) : undefined;
+      return { id:c.id, cat:c.nombre, sub:c.sub||undefined, tag, items };
+    }).filter(g => g.items.length>0);
+  }
+
+  async function fetchMenu(){
+    const sb = window.supabaseClient;
+    const [{ data:cats, error:e1 }, { data:prods, error:e2 }] = await Promise.all([
+      sb.from('categorias').select('id,nombre,sub,orden,visible').eq('visible',true).order('orden'),
+      sb.from('productos').select('id,categoria_id,nombre,descripcion,precio,img_url,visible,orden').eq('visible',true).order('orden')
+    ]);
+    if (e1) throw e1; if (e2) throw e2;
+    return agruparMenu(cats||[], prods||[]);
+  }
+  function cacheGuardar(menu){ try{ localStorage.setItem(MENU_CACHE, JSON.stringify(menu)); }catch(e){} }
+  function cacheLeer(){ try{ const r=localStorage.getItem(MENU_CACHE); return r?JSON.parse(r):null; }catch(e){ return null; } }
+
+  // ====== CLIENTE RECONOCIDO (login por celular, sin clave) ======
+  const CLIENTE_KEY = 'fogon_cliente';
+  function clienteLeer(){ try{ const r=localStorage.getItem(CLIENTE_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
+  function clienteGuardar(c){ try{ localStorage.setItem(CLIENTE_KEY, JSON.stringify(c)); }catch(e){} }
+  function soloDigitos(s){ return (s||'').replace(/\D/g,''); }
 
   // ====== ESTADO ======
   const PEDIDO = {};        // id -> {nombre, precio, qty}
@@ -381,13 +418,13 @@
   function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 
   // ====== RENDER DEL MENÚ ======
-  function nombreCompleto(catId, it){
-    const p = PREFIJO[catId] || '';
+  function nombreCompleto(group, it){
+    const p = prefijoCategoria(group);
     return (p ? p+' ' : '') + it.name;
   }
-  (function construir(){
-    const cont = document.getElementById('menu');
-    const nav = document.getElementById('catnav');
+  function construir(){
+    const cont = document.getElementById('menu'); cont.innerHTML='';
+    const nav = document.getElementById('catnav'); nav.innerHTML='';
     MENU.forEach(group=>{
       // chip de navegación
       const chip = document.createElement('button');
@@ -409,7 +446,7 @@
 
       let body = '<div class="cat-body">';
       group.items.forEach(it=>{
-        META[it.id] = nombreCompleto(group.id, it);
+        META[it.id] = nombreCompleto(group, it);
         const hasImg = !!it.img;
         const precioHtml = it.price>0
           ? '<span class="pprice">'+fmt(it.price)+'</span>'
@@ -436,7 +473,30 @@
       group.items.forEach(it=>{ PRECIO[it.id] = it.price; });
     });
     activarSpy();
-  })();
+  }
+
+  // ====== CARGA INICIAL DEL MENÚ (con caché y reintento) ======
+  function mostrarCargando(){
+    document.getElementById('menu').innerHTML =
+      '<div class="menu-state"><div class="skel"><div class="skbar"></div><div class="skbar"></div><div class="skbar"></div></div></div>';
+  }
+  function mostrarError(){
+    document.getElementById('menu').innerHTML =
+      '<div class="menu-error"><p>No pudimos cargar el menú.<br>Revisa tu conexión e intenta de nuevo.</p>'+
+      '<button type="button" onclick="cargarMenu()">Reintentar</button></div>';
+  }
+  async function cargarMenu(){
+    mostrarCargando();
+    try{
+      MENU = await fetchMenu();
+      cacheGuardar(MENU);
+    }catch(e){
+      console.error('[fogon] fallo al cargar menú:', e);
+      const cache = cacheLeer();
+      if(cache && cache.length){ MENU = cache; } else { mostrarError(); return; }
+    }
+    construir();
+  }
 
   // ====== CARRITO ======
   function cambiar(id, delta){
@@ -501,25 +561,72 @@
     if(tipo==='Domicilio'){ label.textContent='Dirección de entrega'; input.placeholder='Ej: Calle 5 #10-20, barrio Atalaya'; wrap.style.display=''; }
     else if(tipo==='Para la mesa'){ label.textContent='Número de mesa'; input.placeholder='Ej: Mesa 4'; wrap.style.display=''; }
     else { wrap.style.display='none'; } // recoger en el local
+    const req = document.getElementById('cel-req'); if(req) req.style.display = (tipo==='Domicilio') ? '' : 'none';
   }
 
-  // ====== ENVIAR A WHATSAPP ======
-  function enviar(){
-    const lineas=[]; let total=0, hayBebida=false, recipientes=0;
+  // ====== ENVIAR A WHATSAPP (+ guardar pedido domicilio en BD) ======
+  async function enviar(){
+    const items=[]; const lineas=[]; let total=0, hayBebida=false;
     for(const k in PEDIDO){ const it=PEDIDO[k]; if(it.qty>0){
+      items.push({ producto_id:k, qty:it.qty, nombre:it.nombre, precio:it.precio });
       if(it.precio>0){ const sub=it.precio*it.qty; total+=sub; lineas.push('• '+it.qty+'x '+it.nombre+': '+fmt(sub)); }
       else { hayBebida=true; lineas.push('• '+it.qty+'x '+it.nombre+': (valor en el local)'); }
     }}
     if(lineas.length===0){ alert('Agrega al menos un producto al pedido.'); return; }
+
     const nombre = document.getElementById('cli-nombre').value.trim();
     const tipo = document.getElementById('cli-tipo').value;
     const dir = document.getElementById('cli-dir').value.trim();
-    let msg = '*PEDIDO — El Fogón de la Pesa*\n\n' + lineas.join('\n') + '\n\n*Total: '+fmt(total)+'*';
+    const celular = soloDigitos(document.getElementById('cli-celular').value);
+
+    if(tipo==='Domicilio' && celular.length < 7){
+      alert('Para domicilio necesitamos tu número de celular.');
+      document.getElementById('cli-celular').focus();
+      return;
+    }
+
+    // Abrimos la pestaña dentro del gesto del usuario (evita que el navegador bloquee el pop-up tras el await).
+    const waWin = window.open('about:blank','_blank');
+
+    let codigo = null;
+    if(tipo==='Domicilio'){
+      // Guardar cliente + pedido en BD. NUNCA bloquea el WhatsApp (degradación elegante).
+      try{
+        const sb = window.supabaseClient;
+        let clienteId = null;
+        if(celular){
+          const { data:cli, error:eCli } = await sb.rpc('cliente_upsert', { p_celular:celular, p_nombre:nombre||null });
+          if(eCli) throw eCli;
+          if(cli){ clienteId = cli.id; clienteGuardar({ id:cli.id, celular:cli.celular, nombre:cli.nombre }); }
+        }
+        const { data:res, error:ePed } = await sb.rpc('crear_pedido_domicilio', {
+          p_cliente_id: clienteId, p_direccion: dir||null, p_notas: null, p_items: items
+        });
+        if(ePed) throw ePed;
+        if(res && res.codigo) codigo = res.codigo;
+      }catch(e){
+        console.error('[fogon] no se pudo guardar el pedido (sigue por WhatsApp):', e);
+      }
+    } else if(celular){
+      // recoger / mesa: si dejó celular lo recordamos, sin crear pedido en BD
+      try{
+        const sb = window.supabaseClient;
+        const { data:cli } = await sb.rpc('cliente_upsert', { p_celular:celular, p_nombre:nombre||null });
+        if(cli){ clienteGuardar({ id:cli.id, celular:cli.celular, nombre:cli.nombre }); }
+      }catch(e){ console.error('[fogon] cliente_upsert falló:', e); }
+    }
+
+    let msg = '*PEDIDO — El Fogón de la Pesa*';
+    if(codigo) msg += '\n*Pedido #'+codigo+'*';
+    msg += '\n\n' + lineas.join('\n') + '\n\n*Total: '+fmt(total)+'*';
     if(hayBebida) msg += '\n_Bebidas: valor a confirmar con el local._';
     msg += '\n\n*Tipo:* '+tipo;
     if(nombre) msg += '\n*Cliente:* '+nombre;
+    if(celular) msg += '\n*Celular:* '+celular;
     if(dir && tipo!=='Recoger en el local') msg += (tipo==='Para la mesa'?'\n*Mesa:* ':'\n*Dirección:* ')+dir;
-    window.open('https://wa.me/573222259538?text='+encodeURIComponent(msg),'_blank');
+
+    const url = 'https://wa.me/573222259538?text='+encodeURIComponent(msg);
+    if(waWin && !waWin.closed){ waWin.location.href = url; } else { window.location.href = url; }
   }
 
   // ====== INTRO ======
@@ -548,7 +655,25 @@
     MENU.forEach(g=>{ const el=document.getElementById('sec_'+g.id); if(el) obs.observe(el); });
   }
 
+  // ====== INICIO ======
+  function aplicarModoQR(){ if(ES_QR) document.body.classList.add('qr'); }
+  function reconocerCliente(){
+    const c = clienteLeer();
+    if(c && c.nombre){
+      const s = document.getElementById('saludo');
+      if(s){ s.textContent = 'Hola, ' + c.nombre; s.classList.add('show'); }
+    }
+    if(c){
+      const n = document.getElementById('cli-nombre'); if(n && c.nombre) n.value = c.nombre;
+      const cel = document.getElementById('cli-celular'); if(cel && c.celular) cel.value = c.celular;
+    }
+  }
+  function whenReady(cb){ if(window.supabaseClient){ cb(); } else { setTimeout(()=>whenReady(cb), 30); } }
+
+  aplicarModoQR();
+  reconocerCliente();
   toggleDir();
+  whenReady(cargarMenu);
 </script>
 <script type="module" src="supabase.js"></script>
 </body>
