@@ -138,7 +138,7 @@
   function abrirSheet(p){ $(p+'-sheet').classList.add('show'); $(p+'-bd').classList.add('show'); }
   function cerrarSheet(p){ $(p+'-sheet').classList.remove('show'); $(p+'-bd').classList.remove('show'); }
   const ESTADOS={confirmado:{t:'En cocina',bg:'#dbeafe',fg:'#1e40af'},en_proceso:{t:'En proceso',bg:'#ffe4c4',fg:'#9a4a00'},listo:{t:'Servido',bg:'#e9e0ff',fg:'#5b21b6'}};
-  let SB=null, CATS=[], PRODS=[], CART=[], TAB='nueva', canal=null, reloadT=null;
+  let SB=null, CATS=[], PRODS=[], CART=[], TAB='nueva', canal=null, reloadT=null, MESA='';
 
   async function boot(){ SB=window.supabaseClient; $('lf').addEventListener('submit', onLogin);
     const { data:{session} }=await SB.auth.getSession();
@@ -178,7 +178,6 @@
     $('view').innerHTML=html;
     $('mesa').addEventListener('input', e=>{ MESA=e.target.value; });
   }
-  let MESA='';
   function addCart(id){ const p=PRODS.find(x=>x.id===id); if(!p) return; const ex=CART.find(x=>x.producto_id===id); if(ex) ex.qty++; else CART.push({producto_id:p.id, nombre:nombreDesc(p), precio:p.precio||0, qty:1}); actualizarCart(); }
   function actualizarCart(){ const n=CART.reduce((s,x)=>s+x.qty,0), t=CART.reduce((s,x)=>s+x.precio*x.qty,0);
     $('cbInfo').childNodes[0].nodeValue=n+(n===1?' ítem':' ítems'); $('cbTot').textContent=fmt(t);

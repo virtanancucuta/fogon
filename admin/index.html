@@ -664,10 +664,11 @@
       const cel = ped && ped.clientes && ped.clientes.celular;
       const cod = codigo(envPed).replace('#','');
       cerrarSheet('env');
+      refrescarBandeja();
       if(cel){
         const msg='¡Su pedido #'+cod+' va en camino! 🛵 Lo lleva '+envSel.nombre+', 📞 '+(envSel.telefono||'')+'. Gracias por pedir en El Fogón de la Pesa.';
         window.location.href = 'https://wa.me/'+waCliente(cel)+'?text='+encodeURIComponent(msg);
-      }else{ refrescarBandeja(); }
+      }
     }catch(e){ alert('No se pudo enviar: '+(e.message||e)); btn.disabled=false; btn.textContent='Confirmar envío'; }
   }
 
@@ -770,10 +771,10 @@
     cargando('clientes');
     const [{ data:cls, error:e1 }, { data:peds, error:e2 }] = await Promise.all([
       SB.from('clientes').select('id,nombre,celular,created_at'),
-      SB.from('pedidos').select('cliente_id,total,cerrado_at')
+      SB.from('pedidos').select('cliente_id,total,cerrado_at,estado')
     ]);
     if(e1||e2){ setView('<div class="empty">No se pudo cargar.</div>'); return; }
-    const por={}; (peds||[]).forEach(p=>{ if(!p.cliente_id) return; const a=por[p.cliente_id]||(por[p.cliente_id]={n:0,g:0}); a.n++; if(p.cerrado_at) a.g+=(p.total||0); });
+    const por={}; (peds||[]).forEach(p=>{ if(!p.cliente_id || p.estado==='cancelado') return; const a=por[p.cliente_id]||(por[p.cliente_id]={n:0,g:0}); a.n++; if(p.cerrado_at) a.g+=(p.total||0); });
     const rows=(cls||[]).slice().sort((a,b)=>((por[b.id]||{}).g||0)-((por[a.id]||{}).g||0));
     CLIENTES_CACHE = rows;
     let html='<div class="view-head"><div><div class="view-title">Clientes</div><div class="view-sub">'+rows.length+' clientes · toca para ver el carnet VIP</div></div></div>';

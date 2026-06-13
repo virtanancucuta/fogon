@@ -590,17 +590,11 @@
       // Guardar cliente + pedido en BD. NUNCA bloquea el WhatsApp (degradación elegante).
       try{
         const sb = window.supabaseClient;
-        let clienteId = null;
-        if(celular){
-          const { data:cli, error:eCli } = await sb.rpc('cliente_upsert', { p_celular:celular, p_nombre:nombre||null });
-          if(eCli) throw eCli;
-          if(cli){ clienteId = cli.id; clienteGuardar({ id:cli.id, celular:cli.celular, nombre:cli.nombre }); }
-        }
         const { data:res, error:ePed } = await sb.rpc('crear_pedido_domicilio', {
-          p_cliente_id: clienteId, p_direccion: dir||null, p_notas: null, p_items: items
+          p_celular: celular, p_nombre: nombre||null, p_direccion: dir||null, p_notas: null, p_items: items
         });
         if(ePed) throw ePed;
-        if(res && res.codigo) codigo = res.codigo;
+        if(res){ if(res.codigo) codigo = res.codigo; clienteGuardar({ id:res.cliente_id, celular:celular, nombre:nombre||null }); }
       }catch(e){
         console.error('[fogon] no se pudo guardar el pedido (sigue por WhatsApp):', e);
       }
