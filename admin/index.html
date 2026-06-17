@@ -187,6 +187,28 @@
   .cli-stats .g{font-family:'Anton',sans-serif;color:var(--rojo);font-size:1.05rem}
   .cli-stats .n{font-family:'Oswald',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:var(--marron-osc)}
 
+  /* cocina (comandas en el admin) */
+  .ck-grid{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:560px){.ck-grid{grid-template-columns:1fr 1fr}}
+  .ck{background:var(--crema-card);border:2px solid var(--marron-osc);border-radius:16px;overflow:hidden;box-shadow:0 4px 0 rgba(58,30,16,.08)}
+  .ck.proc{border-color:#1e40af}
+  .ck-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 13px;border-bottom:2px solid var(--marron-osc)}
+  .ck.new .ck-h{background:var(--amarillo-suave)}.ck.proc .ck-h{background:#dbeafe}
+  .ck-cod{font-family:'Anton',sans-serif;font-size:1.1rem;color:var(--carbon)}
+  .ck-ronda{margin-left:6px;font-family:'Oswald',sans-serif;font-weight:600;font-size:.55rem;text-transform:uppercase;background:var(--rojo);color:#fff;padding:2px 6px;border-radius:30px}
+  .ck-tipo{font-family:'Oswald',sans-serif;font-weight:600;font-size:.8rem;text-transform:uppercase;color:var(--rojo)}
+  .ck-b{padding:10px 13px}
+  .ck-it{display:flex;gap:8px;padding:3px 0;font-size:.95rem}
+  .ck-it .q{font-family:'Anton',sans-serif;color:var(--rojo);min-width:30px}
+  .ck-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--gris);margin-top:8px}
+  .ck-imp{color:var(--verde-osc)}
+  .ck-acts{display:flex;gap:0;border-top:2px solid var(--marron-osc)}
+  .ck-act{flex:1 1 0;border:none;font-family:'Oswald',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-size:.92rem;padding:14px;cursor:pointer;color:#fff}
+  .ck-act.empezar{background:#1e40af}.ck-act.entregar{background:var(--verde)}
+  .ck-act.repr{flex:0 0 auto;background:#fff;color:var(--marron-osc);border-left:2px solid var(--marron-osc);padding:14px 16px}
+  .ck-act:active{filter:brightness(.94)}
+  .ck-sec{font-family:'Anton',sans-serif;font-size:1rem;color:var(--marron-osc);text-transform:uppercase;margin:14px 2px 6px}
+
   /* nav inferior */
   nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--carbon);display:flex;padding-bottom:var(--safe-b);box-shadow:0 -6px 20px rgba(0,0,0,.3)}
   nav.tabs button{flex:1 1 0;background:none;border:none;color:rgba(255,255,255,.6);font-family:'Oswald',sans-serif;font-weight:600;font-size:.66rem;text-transform:uppercase;letter-spacing:.04em;padding:11px 4px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
@@ -308,7 +330,11 @@
   <main id="view"></main>
 
   <nav class="tabs" id="tabs">
-    <button data-tab="pedidos" class="active" onclick="irA('pedidos')">
+    <button data-tab="cocina" class="active" onclick="irA('cocina')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2v7M11 2v7M9 9v11M7 9a2 2 0 0 0 4 0M17 2c-1.5 1-2 3-2 6s.5 4 2 4 2-1 2-4-.5-5-2-6zM17 12v8"/></svg>
+      Cocina
+    </button>
+    <button data-tab="pedidos" onclick="irA('pedidos')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
       Pedidos
     </button>
@@ -458,6 +484,9 @@
   </div>
 </div>
 
+<!-- iframe oculto para imprimir tickets (no se ve en pantalla; imprime su propio documento) -->
+<iframe id="printframe" title="Impresión" aria-hidden="true" style="position:fixed;left:-9999px;top:0;width:80mm;height:0;border:0"></iframe>
+
 <script type="module" src="../supabase.js"></script>
 <script>
   // ====== util ======
@@ -482,6 +511,7 @@
   }
   function nombreDescriptivo(prod){ const c=CATS.find(x=>x.id===prod.categoria_id); const p=prefijoCat(c); return (p?p+' ':'')+prod.nombre; }
   const MEDIOS = {efectivo:'Efectivo',nequi:'Nequi',daviplata:'Daviplata',datafono:'Datáfono'};
+  const NEGOCIO = { nombre:'El Fogón de la Pesa', dir:'Estación Terpel · El Palustre, Atalaya — Cúcuta', tel:'322 225 9538' };
   const ESTADOS = {
     por_confirmar:{t:'Por confirmar',bg:'#FCE9A8',fg:'#7a5a00'},
     confirmado:{t:'En cocina',bg:'#dbeafe',fg:'#1e40af'},
@@ -491,6 +521,131 @@
     cancelado:{t:'Cancelado',bg:'#f1eadf',fg:'#7A6A57'}
   };
   let SB=null, CATS=[], PRODS=[], DOMIS=[];
+
+  // ====== IMPRESIÓN (iframe oculto, ticket 80mm) ======
+  // Cola secuencial: imprime un ticket a la vez (evita pisar el iframe en ráfagas).
+  let _printQ = Promise.resolve();
+  function imprimir(docHtml){
+    _printQ = _printQ.then(()=> new Promise(res=>{
+      const f = $('printframe'); if(!f){ res(); return; }
+      let done=false; const fin=()=>{ if(done) return; done=true; res(); };
+      f.onload = ()=>{ try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){} setTimeout(fin, 700); };
+      f.srcdoc = docHtml;
+      setTimeout(fin, 4000); // salvavidas si onload no dispara
+    }));
+    return _printQ;
+  }
+  const TICKET_CSS = '@page{size:80mm auto;margin:0}'+
+    '*{margin:0;padding:0;box-sizing:border-box}'+
+    'body{width:80mm;padding:4mm 3mm;font-family:"Courier New",monospace;color:#000;font-size:12px;line-height:1.35}'+
+    '.c{text-align:center}.b{font-weight:bold}.big{font-size:17px;font-weight:bold}'+
+    '.hr{border-top:1px dashed #000;margin:5px 0}.hr2{border-top:2px solid #000;margin:5px 0}'+
+    '.row{display:flex;justify-content:space-between;gap:6px}'+
+    '.it{display:flex;gap:6px;margin:2px 0}.it .q{font-weight:bold;min-width:26px}'+
+    '.tot{display:flex;justify-content:space-between;font-size:16px;font-weight:bold;margin-top:4px}'+
+    '.sm{font-size:10px}.mt{margin-top:4px}.up{text-transform:uppercase}';
+  function docTicket(inner){ return '<!doctype html><html><head><meta charset="utf-8"><style>'+TICKET_CSS+'</style></head><body>'+inner+'</body></html>'; }
+  function lineaTipo(p){
+    if(p && p.tipo==='mesa') return 'MESA '+esc(p.mesa_numero||'?');
+    return 'DOMICILIO';
+  }
+  // Comanda de cocina (SIN precios). c: {tanda,pedido_id,created_at}, p: pedido, items:[{qty,nombre_snap}]
+  function tCocinaHTML(c, p, items){
+    const ronda = c.tanda>1 ? ' · RONDA '+c.tanda : '';
+    let its = (items||[]).map(x=>'<div class="it"><span class="q">'+(x.qty||1)+'x</span><span>'+esc(x.nombre_snap)+'</span></div>').join('');
+    if(!its) its='<div class="sm">Sin ítems</div>';
+    const notas = (p && p.notas) ? '<div class="hr"></div><div class="sm b">NOTAS:</div><div class="sm">'+esc(p.notas)+'</div>' : '';
+    return docTicket(
+      '<div class="c big">'+lineaTipo(p)+'</div>'+
+      '<div class="c sm">COMANDA '+esc(codigo(c.pedido_id))+ronda+'</div>'+
+      '<div class="c sm">'+hora(c.created_at||new Date().toISOString())+'</div>'+
+      '<div class="hr2"></div>'+ its +'<div class="hr2"></div>'+ notas +
+      '<div class="c sm mt">— El Fogón de la Pesa —</div>'
+    );
+  }
+  // Cuenta de cobro (CON precios). p: {id,tipo,mesa_numero}, lineas:[{qty,nombre_snap,precio_snap,subtotal}]
+  function tCuentaHTML(p, lineas, total, medio){
+    let its = (lineas||[]).map(x=>{
+      const val = x.precio_snap>0 ? fmt(x.subtotal) : 'En el local';
+      return '<div class="row"><span>'+(x.qty||1)+'x '+esc(x.nombre_snap)+'</span><span>'+val+'</span></div>';
+    }).join('');
+    if(!its) its='<div class="sm">Sin ítems</div>';
+    const mp = medio ? '<div class="row sm mt"><span>Pago</span><span>'+esc(MEDIOS[medio]||medio)+'</span></div>' : '';
+    return docTicket(
+      '<div class="c b up">'+esc(NEGOCIO.nombre)+'</div>'+
+      '<div class="c sm">'+esc(NEGOCIO.dir)+'</div>'+
+      '<div class="c sm">Tel '+esc(NEGOCIO.tel)+'</div>'+
+      '<div class="hr"></div>'+
+      '<div class="row sm"><span>'+lineaTipo(p)+'</span><span>'+esc(codigo(p.id))+'</span></div>'+
+      '<div class="sm">'+fecha(new Date().toISOString())+'</div>'+
+      '<div class="hr2"></div>'+ its +'<div class="hr"></div>'+
+      '<div class="tot"><span>TOTAL</span><span>'+fmt(total)+'</span></div>'+ mp +
+      '<div class="c sm mt">¡Gracias por su visita!</div>'
+    );
+  }
+
+  // ====== AUTO-IMPRESIÓN ======
+  // Imprime las comandas cuyo pedido ya entró a cocina (confirmado/en_proceso/listo) y no fueron impresas.
+  // Idempotente: marca impreso_at; recargar no reimprime. Cubre mesa (nace confirmada) y domicilio (al confirmar).
+  let autoBusy=false;
+  async function autoImprimir(){
+    if(autoBusy || !SB) return; autoBusy=true;
+    try{
+      const { data, error } = await SB.from('comandas')
+        .select('id,tanda,created_at,pedido_id, pedidos(tipo,mesa_numero,estado,notas), comanda_items(qty,nombre_snap)')
+        .is('impreso_at', null).order('created_at',{ascending:true});
+      if(error) return;
+      const pend=(data||[]).filter(c=>c.pedidos && ['confirmado','en_proceso','listo'].includes(c.pedidos.estado));
+      for(const c of pend){
+        await imprimir(tCocinaHTML(c, c.pedidos, c.comanda_items||[]));
+        try{ await SB.rpc('marcar_comanda_impresa',{ p_comanda_id:c.id }); }catch(e){}
+      }
+    } finally { autoBusy=false; }
+  }
+
+  // ====== COCINA (comandas: Empezar/Entregado + reimprimir) ======
+  let CK=[];
+  function cargarCocina(){
+    setView('<div class="view-head"><div><div class="view-title">Cocina</div><div class="view-sub">Comandas en tiempo real · se imprimen solas</div></div></div><div id="ckvw"><div class="loading">Cargando comandas…</div></div>');
+    refrescarCocina();
+  }
+  async function refrescarCocina(){
+    const cont=$('ckvw'); if(!cont) return;
+    const { data, error } = await SB.from('comandas')
+      .select('id,tanda,estado,created_at,impreso_at,pedido_id, pedidos(tipo,mesa_numero,estado,notas), comanda_items(qty,nombre_snap)')
+      .in('estado',['pendiente','en_proceso']).order('created_at',{ascending:true});
+    if(!$('ckvw')) return;
+    if(error){ cont.innerHTML='<div class="empty">No se pudo cargar.</div>'; return; }
+    CK=(data||[]).filter(c=>c.pedidos && c.pedidos.estado!=='cancelado');
+    if(CK.length===0){ cont.innerHTML='<div class="empty">No hay comandas pendientes 🍲</div>'; return; }
+    const nuevas=CK.filter(c=>c.estado==='pendiente'), proc=CK.filter(c=>c.estado==='en_proceso');
+    let html='';
+    if(nuevas.length){ html+='<div class="ck-sec">Por preparar ('+nuevas.length+')</div><div class="ck-grid">'+nuevas.map(c=>ckCard(c,'new')).join('')+'</div>'; }
+    if(proc.length){ html+='<div class="ck-sec">En cocina ('+proc.length+')</div><div class="ck-grid">'+proc.map(c=>ckCard(c,'proc')).join('')+'</div>'; }
+    cont.innerHTML=html;
+  }
+  function ckCard(c, cls){
+    const p=c.pedidos||{};
+    const its=(c.comanda_items||[]).map(x=>'<div class="ck-it"><span class="q">'+(x.qty||1)+'×</span><span>'+esc(x.nombre_snap)+'</span></div>').join('') || '<div class="ck-it">Sin ítems</div>';
+    const ronda=c.tanda>1?'<span class="ck-ronda">Ronda '+c.tanda+'</span>':'';
+    const imp=c.impreso_at?('Impreso '+hora(c.impreso_at)):'Sin imprimir';
+    const act=c.estado==='pendiente'
+      ? '<button class="ck-act empezar" onclick="avanzarComanda(\''+c.id+'\',\'en_proceso\')">Empezar</button>'
+      : '<button class="ck-act entregar" onclick="avanzarComanda(\''+c.id+'\',\'entregado\')">Entregado</button>';
+    return '<div class="ck '+cls+'"><div class="ck-h"><span class="ck-cod">'+esc(codigo(c.pedido_id))+ronda+'</span><span class="ck-tipo">'+esc(lineaTipo(p))+'</span></div>'+
+      '<div class="ck-b">'+its+'<div class="ck-meta"><span>Recibido '+hora(c.created_at)+'</span><span class="ck-imp">'+imp+'</span></div></div>'+
+      '<div class="ck-acts">'+act+'<button class="ck-act repr" onclick="reimprimirComanda(\''+c.id+'\')">⟳</button></div></div>';
+  }
+  async function avanzarComanda(id, a){
+    try{ const { error }=await SB.rpc('cocina_comanda',{ p_comanda_id:id, p_a:a }); if(error) throw error; refrescarCocina(); }
+    catch(e){ alert('No se pudo: '+(e.message||e)); }
+  }
+  async function reimprimirComanda(id){
+    const c=CK.find(x=>x.id===id); if(!c) return;
+    await imprimir(tCocinaHTML(c, c.pedidos||{}, c.comanda_items||[]));
+    try{ await SB.rpc('marcar_comanda_impresa',{ p_comanda_id:id }); }catch(e){}
+    refrescarCocina();
+  }
 
   // ====== AUTH ======
   function mostrarLogin(){ $('login').style.display='flex'; $('panel').style.display='none'; }
@@ -517,15 +672,15 @@
     finally{ btn.disabled=false; btn.textContent='Entrar'; }
   }
   async function salir(){ desuscribir(); await SB.auth.signOut(); $('email').value=''; $('pass').value=''; mostrarLogin(); }
-  function entrar(rol){ $('quien').textContent = rol==='admin'?'Administradora':('Equipo · '+rol); mostrarPanel(); irA('pedidos'); }
+  function entrar(rol){ $('quien').textContent = rol==='admin'?'Administradora':('Equipo · '+rol); mostrarPanel(); suscribir(); autoImprimir(); irA('cocina'); }
 
   // ====== NAV ======
   let TAB='pedidos';
   function irA(tab){
-    if(tab!=='pedidos' && tab!=='mesas') desuscribir();
     TAB=tab;
     document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
-    if(tab==='pedidos') cargarPedidos();
+    if(tab==='cocina') cargarCocina();
+    else if(tab==='pedidos') cargarPedidos();
     else if(tab==='mesas') cargarMesas();
     else if(tab==='productos') cargarProductos();
     else if(tab==='clientes') cargarClientes();
@@ -542,7 +697,7 @@
     {k:'enviados_hoy', t:'Enviados hoy'},
     {k:'cancelados', t:'Cancelados'}
   ];
-  let FILTRO='por_confirmar', canal=null, reloadT=null;
+  let FILTRO='por_confirmar', canal=null, reloadT=null, BANDEJA_CACHE=[];
 
   function cargarPedidos(){
     let chips='<div class="chips">'+CHIPS.map(c=>'<button class="chip'+(c.k===FILTRO?' active':'')+'" onclick="filtroPedidos(\''+c.k+'\')">'+c.t+'</button>').join('')+'</div>';
@@ -550,7 +705,6 @@
       '<button class="btn-ghost" type="button" onclick="abrirDomiciliarios()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7l-3 3M5 11l4 4M12 2l2 6 6 .5-4.5 4 1.5 6-5-3-5 3 1.5-6L4 8.5 10 8z"/></svg>Domiciliarios</button></div>'+
       chips+'<div id="bandeja"></div>');
     refrescarBandeja();
-    suscribir();
   }
   function filtroPedidos(k){ FILTRO=k; document.querySelectorAll('.chips .chip').forEach((b,i)=>b.classList.toggle('active', CHIPS[i].k===k)); refrescarBandeja(); }
 
@@ -574,20 +728,24 @@
 
   function botonesDe(p){
     const e=p.estado, id=p.id;
+    const imprimible = (e==='confirmado'||e==='en_proceso'||e==='listo'||e==='enviado');
+    const btnImp = imprimible ? '<button class="act alt" onclick="imprimirCuentaDom(\''+id+'\')">Imprimir cuenta</button>' : '';
     if(e==='por_confirmar') return '<div class="ped-acts">'+
       '<button class="act main" onclick="confirmarAbrir(\''+id+'\')">Confirmar y cobrar</button>'+
       '<button class="act alt" onclick="modificarAbrir(\''+id+'\')">Modificar</button>'+
       '<button class="act danger" onclick="cancelar(\''+id+'\')">Cancelar</button></div>';
     if(e==='confirmado' || e==='en_proceso') return '<div class="ped-acts">'+
       '<div class="act-note">'+(e==='en_proceso'?'Cocina preparando…':'En cola de cocina…')+'</div>'+
-      '<button class="act danger" onclick="cancelar(\''+id+'\')">Cancelar</button></div>';
+      btnImp+'<button class="act danger" onclick="cancelar(\''+id+'\')">Cancelar</button></div>';
     if(e==='listo') return '<div class="ped-acts">'+
       '<button class="act main" onclick="enviarAbrir(\''+id+'\')">Enviar</button>'+
-      '<button class="act danger" onclick="cancelar(\''+id+'\')">Cancelar</button></div>';
+      btnImp+'<button class="act danger" onclick="cancelar(\''+id+'\')">Cancelar</button></div>';
+    if(e==='enviado') return '<div class="ped-acts">'+btnImp+'</div>';
     return '';
   }
   function renderBandeja(peds){
     const cont=$('bandeja'); if(!cont) return;
+    BANDEJA_CACHE = peds;
     if(peds.length===0){ cont.innerHTML='<div class="empty">No hay pedidos aquí.</div>'; return; }
     let html='';
     peds.forEach(p=>{
@@ -610,13 +768,28 @@
     });
     cont.innerHTML=html;
   }
+  function imprimirCuentaDom(id){
+    const p=(BANDEJA_CACHE||[]).find(x=>x.id===id); if(!p) return;
+    const lineas=(p.comandas||[]).flatMap(c=>c.comanda_items||[]);
+    imprimir(tCuentaHTML({id:p.id, tipo:'domicilio'}, lineas, p.total, p.medio_pago));
+  }
 
-  // ---- realtime ----
+  // ---- realtime (canal global: vive mientras el panel está abierto) ----
+  function onCambioRT(){
+    clearTimeout(reloadT);
+    reloadT=setTimeout(()=>{
+      if(TAB==='pedidos') refrescarBandeja();
+      else if(TAB==='mesas') refrescarMesas();
+      else if(TAB==='cocina') refrescarCocina();
+      autoImprimir(); // imprime comandas nuevas no impresas (mesa al instante, domicilio al confirmar)
+    }, 450);
+  }
   function suscribir(){
     if(canal) return;
-    canal = SB.channel('bandeja').on('postgres_changes', {event:'*', schema:'public', table:'pedidos'}, ()=>{
-      clearTimeout(reloadT); reloadT=setTimeout(()=>{ if(TAB==='pedidos') refrescarBandeja(); else if(TAB==='mesas') refrescarMesas(); }, 400);
-    }).subscribe();
+    canal = SB.channel('panel-rt')
+      .on('postgres_changes', {event:'*', schema:'public', table:'pedidos'}, onCambioRT)
+      .on('postgres_changes', {event:'*', schema:'public', table:'comandas'}, onCambioRT)
+      .subscribe();
   }
   function desuscribir(){ if(canal){ SB.removeChannel(canal); canal=null; } }
 
@@ -954,11 +1127,11 @@
 
   // ====== MESAS (mapa del salón: ver + cobrar) ======
   let MESAS=[], MESA_PEDS=[], MESA_FIN=[], mtPedido=null, MESAS_CFG=[];
-  const ESTMESA={confirmado:{t:'En cocina',cls:'cocina'},en_proceso:{t:'En proceso',cls:'proc'},listo:{t:'Servido · por cobrar',cls:'servido'}};
+  const ESTMESA={confirmado:{t:'En cola de cocina',cls:'cocina'},en_proceso:{t:'En cocina',cls:'proc'},listo:{t:'Entregado a la mesa',cls:'servido'}};
   function cargarMesas(){
     setView('<div class="view-head"><div><div class="view-title">Mesas</div><div class="view-sub">El salón en tiempo real</div></div>'+
       '<button class="btn-ghost" type="button" onclick="editarMesas()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Editar</button></div><div id="mesasvw"></div>');
-    refrescarMesas(); suscribir();
+    refrescarMesas();
   }
   async function refrescarMesas(){
     const cont=$('mesasvw'); if(!cont) return;
@@ -966,7 +1139,7 @@
     const dS=new Date(); dS.setHours(0,0,0,0);
     const [{data:mesas},{data:act},{data:fin}] = await Promise.all([
       SB.from('mesas').select('id,nombre,orden').eq('activa',true).order('orden'),
-      SB.from('pedidos').select('id,estado,mesa_numero,total, comandas(comanda_items(nombre_snap,qty))').eq('tipo','mesa').in('estado',['confirmado','en_proceso','listo']).order('created_at',{ascending:true}),
+      SB.from('pedidos').select('id,estado,mesa_numero,total, comandas(comanda_items(nombre_snap,qty,precio_snap,subtotal))').eq('tipo','mesa').in('estado',['confirmado','en_proceso','listo']).order('created_at',{ascending:true}),
       SB.from('pedidos').select('id,mesa_numero,total,medio_pago,cerrado_at').eq('tipo','mesa').eq('estado','cobrado').gte('cerrado_at', dS.toISOString()).order('cerrado_at',{ascending:false})
     ]);
     if(!$('mesasvw')) return;
@@ -999,8 +1172,14 @@
     const p=MESA_PEDS.find(x=>x.id===pedidoId); if(!p) return; mtPedido=pedidoId;
     $('mt-title').textContent='Mesa '+(p.mesa_numero||''); $('mt-msg').textContent='';
     const its=(p.comandas||[]).flatMap(c=>c.comanda_items||[]).map(x=>'<div class="ped-it"><span>'+x.qty+'× '+esc(x.nombre_snap)+'</span></div>').join('');
-    $('mt-body').innerHTML='<div class="ped-items" style="border-top:none;padding-top:0">'+(its||'<div class="ped-it"><span>Sin ítems</span></div>')+'</div><div class="ped-tot"><span>Total</span><b>'+fmt(p.total)+'</b></div>';
+    $('mt-body').innerHTML='<div class="ped-items" style="border-top:none;padding-top:0">'+(its||'<div class="ped-it"><span>Sin ítems</span></div>')+'</div><div class="ped-tot"><span>Total</span><b>'+fmt(p.total)+'</b></div>'+
+      '<button class="btn-sm" type="button" style="width:100%;margin-top:12px" onclick="imprimirCuentaMesa()">Imprimir cuenta</button>';
     abrirSheet('mt');
+  }
+  function imprimirCuentaMesa(){
+    const p=MESA_PEDS.find(x=>x.id===mtPedido); if(!p) return;
+    const lineas=(p.comandas||[]).flatMap(c=>c.comanda_items||[]);
+    imprimir(tCuentaHTML({id:p.id, tipo:'mesa', mesa_numero:p.mesa_numero}, lineas, p.total, p.medio_pago));
   }
   async function cobrarMesaCon(medio){
     if(!mtPedido) return; $('mt-msg').textContent='Procesando…';
