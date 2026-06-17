@@ -1081,7 +1081,7 @@
   function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
   function parseYmd(s){ const a=s.split('-').map(Number); return new Date(a[0], a[1]-1, a[2]); }
   function lunesDe(d){ const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); const dow=(x.getDay()+6)%7; x.setDate(x.getDate()-dow); return x; }
-  let VENTAS_FECHA=null;
+  let VENTAS_FECHA=null, CIERRE=null;
   async function cargarVentas(fechaStr){
     cargando('ventas');
     const sel = fechaStr ? parseYmd(fechaStr) : new Date();
@@ -1111,19 +1111,86 @@
       '<button class="vchip'+(VENTAS_FECHA===hoyStr?' on':'')+'" type="button" onclick="cargarVentas(null)">Hoy</button>'+
       '<button class="vchip" type="button" onclick="ventasAyer()">Ayer</button></div>';
     html+='<div class="v-big"><div class="vn">'+esc(fLabel)+'</div><div class="vv">'+fmt(total)+'</div><div class="vs">'+dia.length+(dia.length===1?' venta cerrada':' ventas cerradas')+'</div></div>';
+    html+='<button class="btn-sm" type="button" style="width:100%;margin-bottom:14px" onclick="imprimirCierre()">Imprimir cierre del día (cuadre de caja)</button>';
     const medios=Object.keys(porMedio);
     if(medios.length) html+='<div class="card">'+medios.map(m=>'<div class="v-row"><span class="vnm">'+esc(MEDIOS[m]||m)+'</span><span class="vm">'+fmt(porMedio[m])+'</span></div>').join('')+'</div>';
     const lista=Object.keys(prod).map(k=>({n:k, ...prod[k]})).sort((a,b)=>b.m-a.m);
-    html+='<div class="cat-h" style="margin-top:16px">Por producto</div>';
+    CIERRE={fLabel, total, porMedio, lista, n:dia.length};
+    html+='<div class="cat-h" style="margin-top:16px">Por producto · cantidad y venta</div>';
     html+= lista.length ? '<div class="card">'+lista.map(x=>'<div class="v-row"><span class="vq">'+x.q+'×</span><span class="vnm">'+esc(x.n)+'</span><span class="vm">'+fmt(x.m)+'</span></div>').join('')+'</div>' : '<div class="empty">No hubo ventas ese día.</div>';
     html+='<div class="cat-h" style="margin-top:18px">Resumen</div><div class="v-sum">'+
       '<div class="vsum"><div class="t">Semana</div><div class="v">'+fmt(suma(semana))+'</div><div class="n">'+semana.length+' ventas</div></div>'+
       '<div class="vsum"><div class="t">'+esc(sel.toLocaleDateString('es-CO',{month:'long'}))+'</div><div class="v">'+fmt(suma(mes))+'</div><div class="n">'+mes.length+' ventas</div></div>'+
       '<div class="vsum"><div class="t">Año '+y+'</div><div class="v">'+fmt(suma(all))+'</div><div class="n">'+all.length+' ventas</div></div></div>';
+    html+='<div class="cat-h" style="margin-top:18px">Descargar a Excel (rango de fechas)</div>'+
+      '<div class="card" style="padding:12px 12px 14px"><div class="fecha-bar" style="margin-bottom:10px">'+
+      '<input type="date" id="vr-desde" max="'+hoyStr+'" value="'+VENTAS_FECHA+'"><span style="font-family:\'Oswald\',sans-serif;color:var(--marron-osc)">a</span>'+
+      '<input type="date" id="vr-hasta" max="'+hoyStr+'" value="'+VENTAS_FECHA+'"></div>'+
+      '<button class="btn-sm" type="button" style="width:100%" onclick="descargarExcelRango()">Descargar ventas (.xlsx)</button>'+
+      '<div class="vip-msg" id="vr-msg"></div></div>';
     setView(html);
     const inp=$('vfecha'); if(inp) inp.addEventListener('change', e=>{ if(e.target.value) cargarVentas(e.target.value); });
   }
   function ventasAyer(){ const d=new Date(); d.setDate(d.getDate()-1); cargarVentas(ymd(d)); }
+
+  // ---- cierre de caja impreso (día seleccionado) ----
+  function tCierreHTML(c){
+    const medios = Object.keys(c.porMedio||{}).map(m=>'<div class="row sm"><span>'+esc(MEDIOS[m]||m)+'</span><span>'+fmt(c.porMedio[m])+'</span></div>').join('') || '<div class="sm">—</div>';
+    const prods = (c.lista||[]).map(x=>'<div class="row sm"><span>'+x.q+'x '+esc(x.n)+'</span><span>'+fmt(x.m)+'</span></div>').join('') || '<div class="sm">—</div>';
+    return docTicket(
+      '<div class="c b up">'+esc(NEGOCIO.nombre)+'</div>'+
+      '<div class="c sm b">CIERRE DE CAJA</div>'+
+      '<div class="c sm">'+esc(c.fLabel)+'</div>'+
+      '<div class="hr2"></div>'+
+      '<div class="sm b">POR MEDIO DE PAGO</div>'+ medios +
+      '<div class="hr"></div>'+
+      '<div class="sm b">POR PRODUCTO (cant · venta)</div>'+ prods +
+      '<div class="hr2"></div>'+
+      '<div class="tot"><span>TOTAL</span><span>'+fmt(c.total)+'</span></div>'+
+      '<div class="row sm"><span>Ventas cerradas</span><span>'+c.n+'</span></div>'+
+      '<div class="c sm mt">Impreso '+fecha(new Date().toISOString())+'</div>'
+    );
+  }
+  function imprimirCierre(){ if(!CIERRE){ alert('Aún no hay datos del día.'); return; } imprimir(tCierreHTML(CIERRE)); }
+
+  // ---- descarga a Excel (.xlsx) de un rango de fechas ----
+  function cargarSheetJS(){
+    return new Promise((res,rej)=>{
+      if(window.XLSX) return res();
+      const s=document.createElement('script');
+      s.src='https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+      s.onload=()=>res(); s.onerror=()=>rej(new Error('No se pudo cargar la librería de Excel.'));
+      document.head.appendChild(s);
+    });
+  }
+  async function descargarExcelRango(){
+    const m=$('vr-msg'); if(m) m.textContent='';
+    const d1=$('vr-desde').value, d2=$('vr-hasta').value;
+    if(!d1||!d2){ if(m) m.textContent='Elige las dos fechas (desde y hasta).'; return; }
+    let a=parseYmd(d1), b=parseYmd(d2); if(a>b){ const t=a; a=b; b=t; }
+    const bEnd=new Date(b.getFullYear(),b.getMonth(),b.getDate()+1);
+    if(m) m.textContent='Preparando archivo…';
+    try{
+      await cargarSheetJS();
+      const { data, error } = await SB.from('pedidos')
+        .select('id,tipo,total,medio_pago,cerrado_at, comandas(comanda_items(nombre_snap,qty,subtotal,precio_snap))')
+        .not('cerrado_at','is',null)
+        .gte('cerrado_at', a.toISOString()).lt('cerrado_at', bEnd.toISOString())
+        .order('cerrado_at',{ascending:true});
+      if(error) throw error;
+      const peds=data||[];
+      const detalle=peds.map(p=>({ Fecha: fecha(p.cerrado_at), Tipo: (p.tipo==='mesa'?'Mesa':'Domicilio'), Total: p.total||0, 'Medio de pago': MEDIOS[p.medio_pago]||p.medio_pago||'' }));
+      const prod={}; peds.forEach(p=>(p.comandas||[]).flatMap(c=>c.comanda_items||[]).forEach(it=>{ const k=it.nombre_snap||'—'; const o=prod[k]||(prod[k]={Cantidad:0,Venta:0}); o.Cantidad+=it.qty||0; o.Venta+=it.subtotal||0; }));
+      const porProd=Object.keys(prod).map(k=>({ Producto:k, Cantidad:prod[k].Cantidad, Venta:prod[k].Venta })).sort((x,y)=>y.Venta-x.Venta);
+      const totalRango=peds.reduce((s,p)=>s+(p.total||0),0);
+      detalle.push({ Fecha:'', Tipo:'', Total: totalRango, 'Medio de pago':'TOTAL' });
+      const wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detalle.length?detalle:[{Fecha:'Sin ventas'}]), 'Ventas');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(porProd.length?porProd:[{Producto:'Sin ventas'}]), 'Por producto');
+      XLSX.writeFile(wb, 'ventas_'+d1+'_a_'+d2+'.xlsx');
+      if(m) m.textContent=peds.length+' ventas exportadas.';
+    }catch(e){ if(m) m.textContent='No se pudo: '+(e.message||e); }
+  }
 
   // ====== MESAS (mapa del salón: ver + cobrar) ======
   let MESAS=[], MESA_PEDS=[], MESA_FIN=[], mtPedido=null, MESAS_CFG=[];
