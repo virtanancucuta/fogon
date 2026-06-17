@@ -177,6 +177,25 @@
   .vip-btns .b.ghost{background:none;border:none;color:var(--gris);font-size:.78rem}
   .vip-msg{text-align:center;font-size:.82rem;color:var(--gris);min-height:1em;margin-top:8px}
 
+  /* vista "como lo ve el cliente" del carnet */
+  .cvw{background:radial-gradient(120% 80% at 50% 0%,#2c1a0d,#1a0f07);border-radius:16px;padding:16px;margin:2px 0 6px}
+  .cv-card{background:var(--crema-card);border:2px solid var(--marron-osc);border-radius:18px;padding:18px}
+  .cv-hi{font-family:'Anton',sans-serif;font-size:1.4rem;color:var(--carbon)}
+  .cv-hi span{color:var(--rojo)}
+  .cv-meta{font-size:.8rem;color:var(--gris);margin:2px 0 12px}
+  .cv-boxes{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:6px 0}
+  .cv-bx{aspect-ratio:1;border-radius:11px;border:2px dashed rgba(107,58,30,.4);display:flex;align-items:center;justify-content:center;font-family:'Anton',sans-serif;font-size:1rem;color:rgba(107,58,30,.4);background:#fff}
+  .cv-bx.on{border-style:solid;border-color:var(--marron-osc);background:var(--amarillo);color:var(--carbon);box-shadow:0 3px 0 #c79100}
+  .cv-bx.free{background:var(--verde);border-color:var(--verde);color:#fff;box-shadow:0 3px 0 #178b45}
+  .cv-prog{font-family:'Oswald',sans-serif;text-align:center;color:var(--marron-osc);margin:12px 0 4px;font-size:.9rem}
+  .cv-rew{display:flex;gap:10px;margin-top:12px}
+  .cv-rw{flex:1 1 0;border-radius:14px;padding:12px;text-align:center;border:2px solid var(--marron-osc);background:#fff}
+  .cv-rw .n{font-family:'Anton',sans-serif;font-size:1.5rem;line-height:1}
+  .cv-rw .t{font-family:'Oswald',sans-serif;font-size:.62rem;text-transform:uppercase;color:var(--marron-osc);margin-top:3px}
+  .cv-rw.lock{opacity:.5}.cv-rw.ready{background:var(--amarillo-suave);border-color:var(--rojo)}.cv-rw.done{background:#e6f6ec;border-color:#9fd9b4}
+  .cv-rw .st{font-family:'Oswald',sans-serif;font-weight:600;font-size:.6rem;text-transform:uppercase;margin-top:4px;color:var(--rojo)}
+  .cv-rw.done .st{color:#157a3c}
+
   /* clientes */
   .cli{display:flex;align-items:center;gap:12px;padding:13px 14px}
   .cli-av{flex:0 0 auto;width:44px;height:44px;border-radius:50%;background:var(--carbon);color:var(--amarillo-claro);display:flex;align-items:center;justify-content:center;font-family:'Anton',sans-serif;font-size:1.05rem}
@@ -666,7 +685,7 @@
       const { error } = await SB.auth.signInWithPassword({ email:_correo, password:$('pass').value });
       if(error){ msg.textContent='Correo o contraseña incorrectos.'; return; }
       const rol = await validarStaff();
-      if(rol!=='admin'){ await SB.auth.signOut(); msg.textContent = rol ? ('Esta cuenta es de '+rol+'. Usa la app de '+rol+'.') : 'Esta cuenta no tiene acceso al panel.'; return; }
+      if(rol!=='admin'){ await SB.auth.signOut(); msg.textContent = rol ? ('Esa cuenta es de '+rol+'. Para el panel, entra con el usuario «admin».') : 'Esta cuenta no tiene acceso al panel.'; return; }
       entrar(rol);
     }catch(err){ msg.textContent='No se pudo conectar. Intenta de nuevo.'; }
     finally{ btn.disabled=false; btn.textContent='Entrar'; }
@@ -1023,23 +1042,40 @@
     if(e1||e2){ setView('<div class="empty">No se pudo cargar.</div>'); return; }
     const por={}; (peds||[]).forEach(p=>{ if(!p.cliente_id || p.estado==='cancelado') return; const a=por[p.cliente_id]||(por[p.cliente_id]={n:0,g:0}); a.n++; if(p.cerrado_at) a.g+=(p.total||0); });
     const rows=(cls||[]).slice().sort((a,b)=>((por[b.id]||{}).g||0)-((por[a.id]||{}).g||0));
-    CLIENTES_CACHE = rows;
+    CLIENTES_CACHE = rows; CLI_STATS = por;
     let html='<div class="view-head"><div><div class="view-title">Clientes</div><div class="view-sub">'+rows.length+' clientes · toca para ver el carnet VIP</div></div></div>';
-    if(rows.length===0){ setView(html+'<div class="empty">Aún no hay clientes.</div>'); return; }
-    html+='<div class="card">';
-    rows.forEach((c,i)=>{ const a=por[c.id]||{n:0,g:0};
+    html+='<input id="cli-buscar" type="search" placeholder="Buscar por nombre o celular…" autocomplete="off" '+
+      'style="width:100%;padding:12px 14px;margin-bottom:12px;border:2px solid var(--marron-osc);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:1rem;background:#fff;color:var(--texto)">';
+    html+='<div id="clilista"></div>';
+    setView(html);
+    const inp=$('cli-buscar'); if(inp) inp.addEventListener('input', e=>pintarClientes(e.target.value));
+    pintarClientes('');
+  }
+  function pintarClientes(q){
+    const cont=$('clilista'); if(!cont) return;
+    const t=soloDigitos(q).length>=2 ? null : (q||'').trim().toLowerCase();
+    const dig=soloDigitos(q);
+    const rows=CLIENTES_CACHE.filter(c=>{
+      if(dig.length>=2) return soloDigitos(c.celular).includes(dig);
+      if(t) return (c.nombre||'').toLowerCase().includes(t) || (c.celular||'').toLowerCase().includes(t);
+      return true;
+    });
+    if(rows.length===0){ cont.innerHTML='<div class="empty">'+(CLIENTES_CACHE.length?'Ningún cliente coincide con la búsqueda.':'Aún no hay clientes.')+'</div>'; return; }
+    let html='<div class="card">';
+    rows.forEach((c,i)=>{ const a=CLI_STATS[c.id]||{n:0,g:0};
       html+=(i>0?'<div style="border-top:1px dashed rgba(107,58,30,.2)"></div>':'')+
         '<div class="cli tap" onclick="carnetAbrir(\''+c.id+'\')"><div class="cli-av">'+esc(iniciales(c.nombre||c.celular))+'</div>'+
         '<div class="cli-main"><div class="cli-name">'+esc(c.nombre||'Sin nombre')+'</div><div class="cli-cel">'+esc(c.celular||'')+'</div></div>'+
         '<div class="cli-stats"><div class="g">'+fmt(a.g)+'</div><div class="n">'+a.n+(a.n===1?' pedido':' pedidos')+'</div></div></div>';
     });
-    setView(html+'</div>');
+    cont.innerHTML=html+'</div>';
   }
 
   // ====== CARNET VIP (desde Clientes) ======
-  let CLIENTES_CACHE=[], carCli=null, carTarjeta=null;
+  let CLIENTES_CACHE=[], CLI_STATS={}, carCli=null, carTarjeta=null, carVistaCliente=false;
   async function carnetAbrir(id){
     carCli = CLIENTES_CACHE.find(c=>c.id===id); if(!carCli) return;
+    carVistaCliente=false;
     $('car-title').textContent='Carnet · '+(carCli.nombre||carCli.celular||'');
     $('car-body').innerHTML='<div class="loading">Cargando…</div>'; $('car-msg').textContent='';
     abrirSheet('car');
@@ -1048,6 +1084,7 @@
   async function pintarCarnet(){
     const { data } = await SB.from('tarjetas_vip').select('sellos,ciclo,premio15_reclamado,premio30_reclamado').eq('cliente_id', carCli.id).maybeSingle();
     carTarjeta = data || { sellos:0, ciclo:1, premio15_reclamado:false, premio30_reclamado:false };
+    if(carVistaCliente){ pintarCarnetCliente(); return; }
     const s = carTarjeta.sellos||0;
     const enCarta = s<=15 ? s : s-15;
     let boxes='';
@@ -1061,8 +1098,27 @@
     btns+='<button class="b premio" type="button" onclick="reclamar(15)"'+((s>=15 && !p15)?'':' disabled')+'>'+(p15?'Premio #15 reclamado':'Reclamar almuerzo #15')+'</button>';
     btns+='<button class="b premio" type="button" onclick="reclamar(30)"'+((s>=30 && !p30)?'':' disabled')+'>'+(p30?'Premio #30 reclamado':'Reclamar almuerzo #30')+'</button>';
     if(s>=30 && p15 && p30) btns+='<button class="b ghost" type="button" onclick="reiniciar()">Reiniciar carnet (nueva ronda)</button>';
+    btns+='<button class="b ghost" type="button" onclick="toggleVistaCliente()">Ver como lo ve el cliente</button>';
     $('car-body').innerHTML='<div class="vip-prog">Carnet #'+(s<=15?1:2)+(carTarjeta.ciclo>1?(' · ronda '+carTarjeta.ciclo):'')+'</div>'+
       '<div class="vip-boxes">'+boxes+'</div><div class="vip-prog">'+prog+'</div><div class="vip-btns">'+btns+'</div>';
+  }
+  function toggleVistaCliente(){ carVistaCliente=!carVistaCliente; pintarCarnet(); }
+  function pintarCarnetCliente(){
+    const t=carTarjeta||{}; const s=t.sellos||0;
+    const enCarta = s<=15 ? s : s-15; const cartaNum = s<=15 ? 1 : 2;
+    let boxes='';
+    for(let i=1;i<=15;i++){ const on=i<=enCarta; const premio=(i===15); boxes+='<div class="cv-bx'+(on?(premio?' free':' on'):'')+'">'+(premio?'★':i)+'</div>'; }
+    function rew(n, claimed){ const ready=s>=n && !claimed; const cls=claimed?'done':(ready?'ready':'lock'); const st=claimed?'Reclamado':(ready?'¡Disponible!':''); return '<div class="cv-rw '+cls+'"><div class="n">'+n+'</div><div class="t">almuerzo gratis</div>'+(st?'<div class="st">'+st+'</div>':'')+'</div>'; }
+    let prog;
+    if(s>=30) prog='¡Carnet completo! Pide tus premios en el local.';
+    else if(s>=15) prog='Llevas '+s+' sellos · te faltan '+(30-s)+' para el premio #30.';
+    else prog='Llevas '+s+' de 15 sellos · te faltan '+(15-s)+' para tu almuerzo gratis.';
+    $('car-body').innerHTML='<div class="cvw"><div class="cv-card">'+
+      '<div class="cv-hi">Hola, <span>'+esc(carCli.nombre||'')+'</span></div>'+
+      '<div class="cv-meta">Carnet #'+cartaNum+(t.ciclo>1?(' · ronda '+t.ciclo):'')+'</div>'+
+      '<div class="cv-boxes">'+boxes+'</div><div class="cv-prog">'+prog+'</div>'+
+      '<div class="cv-rew">'+rew(15,t.premio15_reclamado)+rew(30,t.premio30_reclamado)+'</div></div></div>'+
+      '<div class="vip-btns"><button class="b" type="button" onclick="toggleVistaCliente()">Volver a gestión</button></div>';
   }
   async function sellar(){ $('car-msg').textContent='';
     try{ const { error }=await SB.rpc('sellar_tarjeta',{ p_cliente_id:carCli.id }); if(error) throw error; await pintarCarnet(); $('car-msg').textContent='Sello agregado.'; }
