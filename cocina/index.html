@@ -67,7 +67,7 @@
   <div class="login-card">
     <h1>Iniciar sesión</h1>
     <form id="lf">
-      <label for="email">Correo</label><input id="email" type="email" autocomplete="username" inputmode="email" placeholder="cocina@elfogondelapesa.com" required>
+      <label for="email">Usuario</label><input id="email" type="text" autocomplete="username" placeholder="cocina" required>
       <label for="pass">Contraseña</label><input id="pass" type="password" autocomplete="current-password" required>
       <button class="btn-primary" id="lb" type="submit">Entrar</button>
       <div class="login-msg" id="lm"></div>
@@ -103,7 +103,8 @@
   async function onLogin(e){
     e.preventDefault(); const m=$('lm'),b=$('lb'); m.textContent=''; b.disabled=true; b.textContent='Entrando…';
     try{
-      const { error }=await SB.auth.signInWithPassword({ email:$('email').value.trim(), password:$('pass').value });
+      const _u=$('email').value.trim().toLowerCase(); const _correo=_u.includes('@')?_u:_u+'@elfogondelapesa.com';
+      const { error }=await SB.auth.signInWithPassword({ email:_correo, password:$('pass').value });
       if(error){ m.textContent='Correo o contraseña incorrectos.'; return; }
       if(!(await rolOk())){ await SB.auth.signOut(); m.textContent='Esta cuenta no es de cocina.'; return; }
       entrar();

@@ -278,7 +278,7 @@
     <h1>Iniciar sesión</h1>
     <p>Acceso solo para el equipo.</p>
     <form id="login-form">
-      <div class="field"><label for="email">Correo</label><input id="email" type="email" autocomplete="username" inputmode="email" placeholder="correo@elfogondelapesa.com" required></div>
+      <div class="field"><label for="email">Usuario</label><input id="email" type="text" autocomplete="username" placeholder="admin" required></div>
       <div class="field"><label for="pass">Contraseña</label><input id="pass" type="password" autocomplete="current-password" placeholder="Tu contraseña" required></div>
       <button class="btn-primary" id="login-btn" type="submit">Entrar</button>
       <div class="login-msg" id="login-msg"></div>
@@ -507,7 +507,8 @@
     e.preventDefault();
     const btn=$('login-btn'), msg=$('login-msg'); msg.textContent=''; btn.disabled=true; btn.textContent='Entrando…';
     try{
-      const { error } = await SB.auth.signInWithPassword({ email:$('email').value.trim(), password:$('pass').value });
+      const _u=$('email').value.trim().toLowerCase(); const _correo=_u.includes('@')?_u:_u+'@elfogondelapesa.com';
+      const { error } = await SB.auth.signInWithPassword({ email:_correo, password:$('pass').value });
       if(error){ msg.textContent='Correo o contraseña incorrectos.'; return; }
       const rol = await validarStaff();
       if(rol!=='admin'){ await SB.auth.signOut(); msg.textContent = rol ? ('Esta cuenta es de '+rol+'. Usa la app de '+rol+'.') : 'Esta cuenta no tiene acceso al panel.'; return; }
