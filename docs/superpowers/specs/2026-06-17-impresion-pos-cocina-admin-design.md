@@ -76,6 +76,11 @@ Hoy la bandeja de domicilio tiene botón "En proceso" (`transicion_pedido` confi
 
 ### Front `/admin`
 - **Nueva sección "Cocina" / comandas:** lista de comandas `pendiente` y `en_proceso` (join pedido para mesa/tipo/#código), con botones **Empezar**/**Entregado**, badge **Impreso HH:MM** y botón **Reimprimir**. Realtime sobre `comandas`.
+- **Mapa de mesas — estado visible por mesa (requisito de Jorge):** cada mesa ocupada muestra una **etiqueta de texto clara** además del color, derivada de su comanda activa:
+  - **En cocina** (comanda `en_proceso` / pedido `en_proceso`) — se está preparando.
+  - **Entregado a la mesa** (comanda `entregado` / pedido `listo`) — servido, por cobrar.
+  - (Y los previos: **Pendiente/Por preparar** cuando la comanda está `pendiente`, **Libre** cuando no hay cuenta abierta.)
+  Si una mesa tiene varias rondas, el estado refleja la **ronda más atrasada** (si alguna sigue en cocina, la mesa figura "En cocina"). Coherente con `recalc_estado_pedido`.
 - **Auto-print por realtime:** al detectar comanda nueva o no impresa, renderiza el ticket de cocina en iframe oculto, imprime y llama `marcar_comanda_impresa`.
 - **Render de tickets:** dos plantillas (comanda de cocina / cuenta de cobro) en CSS 80 mm dentro de iframe oculto + `@media print`.
 - **Cuenta de cobro:** botón "Imprimir cuenta" en el detalle de mesa (al cobrar) y de domicilio (al cerrar/enviar).
@@ -90,9 +95,10 @@ Hoy la bandeja de domicilio tiene botón "En proceso" (`transicion_pedido` confi
 2. Recargar el panel admin **no reimprime** la comanda ya impresa.
 3. Reimprimir produce una copia idéntica y mantiene la marca.
 4. Admin marca **Empezar** y **Entregado** → el pedido avanza (en_proceso → listo) sin pasar por /cocina.
-5. Al cobrar una mesa, el admin imprime la **cuenta de cobro** con encabezado del negocio, productos, precios y TOTAL correctos.
-6. Domicilio: Confirmar y cobrar (imprime comanda) → Empezar/Entregado → Enviar (cierra venta) → cuenta de cobro imprimible.
-7. El ancho de 80 mm se ve bien en la térmica real (validación física de Jorge).
+5. En el **mapa de mesas**, cada mesa ocupada muestra con texto claro si está **En cocina** o **Entregado a la mesa**; al marcar Empezar/Entregado en la comanda, el mapa se actualiza en vivo.
+6. Al cobrar una mesa, el admin imprime la **cuenta de cobro** con encabezado del negocio, productos, precios y TOTAL correctos.
+7. Domicilio: Confirmar y cobrar (imprime comanda) → Empezar/Entregado → Enviar (cierra venta) → cuenta de cobro imprimible.
+8. El ancho de 80 mm se ve bien en la térmica real (validación física de Jorge).
 
 ## Fuera de alcance (YAGNI)
 - Corte automático de papel (ESC/POS).
