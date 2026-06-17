@@ -616,7 +616,7 @@
       .in('estado',['pendiente','en_proceso']).order('created_at',{ascending:true});
     if(!$('ckvw')) return;
     if(error){ cont.innerHTML='<div class="empty">No se pudo cargar.</div>'; return; }
-    CK=(data||[]).filter(c=>c.pedidos && c.pedidos.estado!=='cancelado');
+    CK=(data||[]).filter(c=>c.pedidos && ['confirmado','en_proceso','listo'].includes(c.pedidos.estado));
     if(CK.length===0){ cont.innerHTML='<div class="empty">No hay comandas pendientes 🍲</div>'; return; }
     const nuevas=CK.filter(c=>c.estado==='pendiente'), proc=CK.filter(c=>c.estado==='en_proceso');
     let html='';
