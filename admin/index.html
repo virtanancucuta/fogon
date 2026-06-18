@@ -1095,6 +1095,7 @@
     else prog='Lleva '+s+' de 15 · faltan '+(15-s)+' para el almuerzo gratis.';
     const p15 = carTarjeta.premio15_reclamado, p30 = carTarjeta.premio30_reclamado;
     let btns='<button class="b sello" type="button" onclick="sellar()"'+(s>=30?' disabled':'')+'>+ Poner sello de hoy</button>';
+    btns+='<button class="b" type="button" onclick="quitarSello()"'+(s<=0?' disabled':'')+'>− Quitar un sello (corregir)</button>';
     btns+='<button class="b premio" type="button" onclick="reclamar(15)"'+((s>=15 && !p15)?'':' disabled')+'>'+(p15?'Premio #15 reclamado':'Reclamar almuerzo #15')+'</button>';
     btns+='<button class="b premio" type="button" onclick="reclamar(30)"'+((s>=30 && !p30)?'':' disabled')+'>'+(p30?'Premio #30 reclamado':'Reclamar almuerzo #30')+'</button>';
     if(s>=30 && p15 && p30) btns+='<button class="b ghost" type="button" onclick="reiniciar()">Reiniciar carnet (nueva ronda)</button>';
@@ -1123,6 +1124,10 @@
   async function sellar(){ $('car-msg').textContent='';
     try{ const { error }=await SB.rpc('sellar_tarjeta',{ p_cliente_id:carCli.id }); if(error) throw error; await pintarCarnet(); $('car-msg').textContent='Sello agregado.'; }
     catch(e){ $('car-msg').textContent=(e.message||''+e).replace('ya tiene un sello hoy','Este cliente ya tiene su sello de hoy.'); }
+  }
+  async function quitarSello(){ if(!confirm('¿Quitar un sello de este cliente? Úsalo solo si lo pusiste por error.')) return; $('car-msg').textContent='';
+    try{ const { error }=await SB.rpc('quitar_sello',{ p_cliente_id:carCli.id }); if(error) throw error; await pintarCarnet(); $('car-msg').textContent='Sello quitado.'; }
+    catch(e){ $('car-msg').textContent='No se pudo: '+(e.message||e); }
   }
   async function reclamar(cual){ $('car-msg').textContent='';
     try{ const { error }=await SB.rpc('reclamar_premio',{ p_cliente_id:carCli.id, p_cual:cual }); if(error) throw error; await pintarCarnet(); $('car-msg').textContent='Premio #'+cual+' marcado como entregado.'; }
