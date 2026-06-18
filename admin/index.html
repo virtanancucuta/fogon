@@ -1183,12 +1183,14 @@
       '<div class="vsum"><div class="t">Semana</div><div class="v">'+fmt(suma(semana))+'</div><div class="n">'+semana.length+' ventas</div></div>'+
       '<div class="vsum"><div class="t">'+esc(sel.toLocaleDateString('es-CO',{month:'long'}))+'</div><div class="v">'+fmt(suma(mes))+'</div><div class="n">'+mes.length+' ventas</div></div>'+
       '<div class="vsum"><div class="t">Año '+y+'</div><div class="v">'+fmt(suma(all))+'</div><div class="n">'+all.length+' ventas</div></div></div>';
-    html+='<div class="cat-h" style="margin-top:18px">Descargar a Excel (rango de fechas)</div>'+
+    html+='<div class="cat-h" style="margin-top:18px">Ventas por rango de fechas</div>'+
       '<div class="card" style="padding:12px 12px 14px"><div class="fecha-bar" style="margin-bottom:10px">'+
       '<input type="date" id="vr-desde" max="'+hoyStr+'" value="'+VENTAS_FECHA+'"><span style="font-family:\'Oswald\',sans-serif;color:var(--marron-osc)">a</span>'+
       '<input type="date" id="vr-hasta" max="'+hoyStr+'" value="'+VENTAS_FECHA+'"></div>'+
-      '<button class="btn-sm" type="button" style="width:100%" onclick="descargarExcelRango()">Descargar ventas (.xlsx)</button>'+
-      '<div class="vip-msg" id="vr-msg"></div></div>';
+      '<div style="display:flex;gap:8px">'+
+      '<button class="btn-sm" type="button" style="flex:1 1 0" onclick="verRangoVentas()">Ver ventas</button>'+
+      '<button class="btn-sm alt" type="button" style="flex:1 1 0" onclick="descargarExcelRango()">Descargar Excel</button></div>'+
+      '<div class="vip-msg" id="vr-msg"></div><div id="vr-result"></div></div>';
     setView(html);
     const inp=$('vfecha'); if(inp) inp.addEventListener('change', e=>{ if(e.target.value) cargarVentas(e.target.value); });
   }
@@ -1224,22 +1226,47 @@
       document.head.appendChild(s);
     });
   }
-  async function descargarExcelRango(){
-    const m=$('vr-msg'); if(m) m.textContent='';
+  async function consultarRango(){
     const d1=$('vr-desde').value, d2=$('vr-hasta').value;
-    if(!d1||!d2){ if(m) m.textContent='Elige las dos fechas (desde y hasta).'; return; }
+    if(!d1||!d2) return { err:'Elige las dos fechas (desde y hasta).' };
     let a=parseYmd(d1), b=parseYmd(d2); if(a>b){ const t=a; a=b; b=t; }
     const bEnd=new Date(b.getFullYear(),b.getMonth(),b.getDate()+1);
-    if(m) m.textContent='Preparando archivo…';
+    const { data, error } = await SB.from('pedidos')
+      .select('id,tipo,total,medio_pago,cerrado_at, comandas(comanda_items(nombre_snap,qty,subtotal,precio_snap))')
+      .not('cerrado_at','is',null)
+      .gte('cerrado_at', a.toISOString()).lt('cerrado_at', bEnd.toISOString())
+      .order('cerrado_at',{ascending:true});
+    if(error) return { err: error.message };
+    return { peds: data||[], d1, d2 };
+  }
+  function resumenRango(peds){
+    const total=peds.reduce((s,p)=>s+(p.total||0),0);
+    const porMedio={}, prod={};
+    peds.forEach(p=>{ if(p.medio_pago) porMedio[p.medio_pago]=(porMedio[p.medio_pago]||0)+(p.total||0);
+      (p.comandas||[]).flatMap(c=>c.comanda_items||[]).forEach(it=>{ const k=it.nombre_snap||'—'; const a=prod[k]||(prod[k]={q:0,m:0}); a.q+=it.qty||0; a.m+=it.subtotal||0; }); });
+    const lista=Object.keys(prod).map(k=>({n:k, ...prod[k]})).sort((a,b)=>b.m-a.m);
+    return { total, porMedio, lista };
+  }
+  async function verRangoVentas(){
+    const m=$('vr-msg'), res=$('vr-result'); if(res) res.innerHTML=''; if(m) m.textContent='Consultando…';
+    const r=await consultarRango();
+    if(r.err){ if(m) m.textContent=r.err; return; }
+    if(m) m.textContent='';
+    const peds=r.peds; const { total, porMedio, lista }=resumenRango(peds);
+    let html='<div class="v-big" style="margin-top:12px"><div class="vn">'+esc(r.d1)+'  a  '+esc(r.d2)+'</div><div class="vv">'+fmt(total)+'</div><div class="vs">'+peds.length+(peds.length===1?' venta':' ventas')+'</div></div>';
+    const medios=Object.keys(porMedio);
+    if(medios.length) html+='<div class="card">'+medios.map(mm=>'<div class="v-row"><span class="vnm">'+esc(MEDIOS[mm]||mm)+'</span><span class="vm">'+fmt(porMedio[mm])+'</span></div>').join('')+'</div>';
+    html+='<div class="cat-h" style="margin-top:14px">Por producto · cantidad y venta</div>';
+    html+= lista.length ? '<div class="card">'+lista.map(x=>'<div class="v-row"><span class="vq">'+x.q+'×</span><span class="vnm">'+esc(x.n)+'</span><span class="vm">'+fmt(x.m)+'</span></div>').join('')+'</div>' : '<div class="empty">No hubo ventas en ese rango.</div>';
+    if(res) res.innerHTML=html;
+  }
+  async function descargarExcelRango(){
+    const m=$('vr-msg'); if(m) m.textContent='Preparando archivo…';
+    const r=await consultarRango();
+    if(r.err){ if(m) m.textContent=r.err; return; }
     try{
       await cargarSheetJS();
-      const { data, error } = await SB.from('pedidos')
-        .select('id,tipo,total,medio_pago,cerrado_at, comandas(comanda_items(nombre_snap,qty,subtotal,precio_snap))')
-        .not('cerrado_at','is',null)
-        .gte('cerrado_at', a.toISOString()).lt('cerrado_at', bEnd.toISOString())
-        .order('cerrado_at',{ascending:true});
-      if(error) throw error;
-      const peds=data||[];
+      const peds=r.peds;
       const detalle=peds.map(p=>({ Fecha: fecha(p.cerrado_at), Tipo: (p.tipo==='mesa'?'Mesa':'Domicilio'), Total: p.total||0, 'Medio de pago': MEDIOS[p.medio_pago]||p.medio_pago||'' }));
       const prod={}; peds.forEach(p=>(p.comandas||[]).flatMap(c=>c.comanda_items||[]).forEach(it=>{ const k=it.nombre_snap||'—'; const o=prod[k]||(prod[k]={Cantidad:0,Venta:0}); o.Cantidad+=it.qty||0; o.Venta+=it.subtotal||0; }));
       const porProd=Object.keys(prod).map(k=>({ Producto:k, Cantidad:prod[k].Cantidad, Venta:prod[k].Venta })).sort((x,y)=>y.Venta-x.Venta);
@@ -1248,7 +1275,7 @@
       const wb=XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detalle.length?detalle:[{Fecha:'Sin ventas'}]), 'Ventas');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(porProd.length?porProd:[{Producto:'Sin ventas'}]), 'Por producto');
-      XLSX.writeFile(wb, 'ventas_'+d1+'_a_'+d2+'.xlsx');
+      XLSX.writeFile(wb, 'ventas_'+r.d1+'_a_'+r.d2+'.xlsx');
       if(m) m.textContent=peds.length+' ventas exportadas.';
     }catch(e){ if(m) m.textContent='No se pudo: '+(e.message||e); }
   }
